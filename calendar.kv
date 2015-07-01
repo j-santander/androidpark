@@ -1,0 +1,204 @@
+#:kivy 1.0
+
+#:import Calendar ui.calendar
+#:import Month ui.month
+#:import Day ui.day
+
+Calendar:
+
+<Querying>:
+   id: querying_popup
+   size_hint_y: .1
+   auto_dismiss: False
+   Label:
+      text: "Consultando..."
+
+<Confirm>:
+   id: confirmation_popup
+   size_hint: [.9,.9]
+   auto_dismiss: False
+   ok_button: ok_button
+   cancel_button: cancel_button
+   BoxLayout:
+      orientation: "vertical"
+      BoxLayout:
+         orientation: "horizontal"
+         padding: [10,10,10,10]
+         size_hint_y: None
+         Label:
+            text: root.text
+            text_size: self.size
+            valign: 'middle'
+            halign: 'center'
+      BoxLayout:
+         padding: [10,10,10,10]
+         orientation: "horizontal"
+         Button:
+            size_hint_y: 1/5.
+            id: ok_button
+            text: "OK"
+            on_press: root.accept()
+         Button:
+            size_hint_y: 1/5.
+            id: cancel_button
+            text: "Cancelar"
+            on_press: root.cancel()
+
+<Error>:
+   id: error_popup
+   size_hint_x: .9
+   size_hint_y: None
+   auto_dismiss: False
+   ok_button: ok_button
+   BoxLayout:
+      orientation: "vertical"
+      BoxLayout:
+         orientation: "horizontal"
+         size_hint_y: None
+         padding: [10,10,10,10]
+         Label:
+            text: root.text
+            text_size: self.size
+            valign: 'middle'
+            halign: 'center'
+      BoxLayout:
+         padding: [10,10,10,10]
+         orientation: "horizontal"
+         Button:
+            size_hint_y: None
+            height: 30
+            id: ok_button
+            text: "OK"
+            on_press: root.accept()
+
+
+<Calendar>:
+   current_month: current_month
+   next_month: next_month
+   service_state: False
+   toggle_service: toggle_service
+   BoxLayout:
+      orientation: "vertical"
+      BoxLayout:
+         orientation: "horizontal"
+         height: 40
+         size_hint_y: None
+         padding: [5,5,5,0]
+         Widget:
+            width: 5
+            size_hint_x: None
+         Button:
+            width: 30
+            size_hint_x: None
+            on_press: root.open_settings()
+            Image:
+               source: 'res/ic_settings_applications_white_48dp.png'
+               center_y: self.parent.center_y
+               center_x: self.parent.center_x
+               size: 30, 30
+               allow_stretch: True
+         Button:
+            width: 30
+            size_hint_x: None
+            on_press: root.send()
+            Image:
+               source: 'res/ic_file_upload_white_48dp.png'
+               center_y: self.parent.center_y
+               center_x: self.parent.center_x
+               size: 30, 30
+               allow_stretch: True
+         Button:
+            width: 30
+            size_hint_x: None
+            on_press: root.update_request()
+            Image:
+               source: 'res/ic_refresh_white_48dp.png'
+               center_y: self.parent.center_y
+               center_x: self.parent.center_x
+               size: 30, 30
+               allow_stretch: True
+         Button:
+            id: toggle_service
+            width: 30
+            size_hint_x: None
+            on_press: root.toggle_service_state()
+            img_play: img_play
+            img_stop: img_stop
+            Image:
+               id: img_stop
+               opacity: 0
+               source: 'res/ic_stop_white_48dp.png'
+               center_y: self.parent.center_y
+               center_x: self.parent.center_x
+               size: 30, 30
+               allow_stretch: True
+            Image:
+               id: img_play
+               opacity: 1
+               source: 'res/ic_play_arrow_white_48dp.png'
+               center_y: self.parent.center_y
+               center_x: self.parent.center_x
+               size: 30, 30
+               allow_stretch: True
+
+         Label:
+            text: "Parking App"
+      PageLayout:
+         Month:
+            id: current_month
+            calendar: root
+            label: "current"
+         Month:
+            id: next_month
+            calendar: root
+            label: "next"
+
+<Header>:
+   height: 30
+   size_hint_y: None
+   Button:
+      text: root.text
+      on_press: root.request_weekday()
+
+<Month>:
+   month: month
+   name: month_name
+   BoxLayout:   
+      orientation: "vertical"
+      canvas:
+         Color:
+            rgba: .1, .1, .1, 1
+         Rectangle:
+            pos: self.pos
+            size: self.size
+      BoxLayout:
+         padding: [10,10,10,1]
+         spacing: [2,2]
+         height: 40
+         size_hint_y: None
+         Button:
+            id: month_name
+            on_press: root.request_month()
+      GridLayout:
+         id: month
+         cols: 7
+         padding: [10,1,10,10]
+         spacing: [2,2]
+
+<Day>:
+   day_button: day_button
+   on_pos: self.redraw()
+   on_size: self.redraw()
+   Button:
+      id: day_button
+      halign: 'center'
+      valign: 'middle'
+      on_press: root.toggle()
+
+
+
+<SettingPassword>:
+   Label:
+      text: root.mask(root.value) or ''
+      pos: root.pos
+      font_size: '15sp'

@@ -1,3 +1,5 @@
+# Emacs back-up
+*~
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -28,6 +30,7 @@ var/
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+!buildozer.spec
 
 # Installer logs
 pip-log.txt
@@ -55,3 +58,7 @@ docs/_build/
 
 # PyBuilder
 target/
+/.buildozer
+/.idea
+/bin
+/calendar.ini
