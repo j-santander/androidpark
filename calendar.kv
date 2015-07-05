@@ -23,7 +23,7 @@ Calendar:
       orientation: "vertical"
       BoxLayout:
          orientation: "horizontal"
-         padding: [10,10,10,10]
+         padding: ['10dp','10dp','10dp','10dp']
          size_hint_y: None
          Label:
             text: root.text
@@ -31,7 +31,7 @@ Calendar:
             valign: 'middle'
             halign: 'center'
       BoxLayout:
-         padding: [10,10,10,10]
+         padding: ['10dp','10dp','10dp','10dp']
          orientation: "horizontal"
          Button:
             size_hint_y: 1/5.
@@ -55,18 +55,18 @@ Calendar:
       BoxLayout:
          orientation: "horizontal"
          size_hint_y: None
-         padding: [10,10,10,10]
+         padding: ['10dp','10dp','10dp','10dp']
          Label:
             text: root.text
             text_size: self.size
             valign: 'middle'
             halign: 'center'
       BoxLayout:
-         padding: [10,10,10,10]
+         padding: ['10dp','10dp','10dp','10dp']
          orientation: "horizontal"
          Button:
             size_hint_y: None
-            height: 30
+            height: '40dp'
             id: ok_button
             text: "OK"
             on_press: root.accept()
@@ -81,45 +81,45 @@ Calendar:
       orientation: "vertical"
       BoxLayout:
          orientation: "horizontal"
-         height: 40
+         height: '50dp'
          size_hint_y: None
-         padding: [5,5,5,0]
+         padding: ['5dp','5dp','5dp','0dp']
          Widget:
-            width: 5
+            width: '5dp'
             size_hint_x: None
          Button:
-            width: 30
+            width: '40dp'
             size_hint_x: None
             on_press: root.open_settings()
             Image:
                source: 'res/ic_settings_applications_white_48dp.png'
                center_y: self.parent.center_y
                center_x: self.parent.center_x
-               size: 30, 30
+               size: '30dp', '30dp'
                allow_stretch: True
          Button:
-            width: 30
+            width: '40dp'
             size_hint_x: None
             on_press: root.send()
             Image:
                source: 'res/ic_file_upload_white_48dp.png'
                center_y: self.parent.center_y
                center_x: self.parent.center_x
-               size: 30, 30
+               size: '40dp', '40dp'
                allow_stretch: True
          Button:
-            width: 30
+            width: '40dp'
             size_hint_x: None
             on_press: root.update_request()
             Image:
                source: 'res/ic_refresh_white_48dp.png'
                center_y: self.parent.center_y
                center_x: self.parent.center_x
-               size: 30, 30
+               size: '40dp', '40dp'
                allow_stretch: True
          Button:
             id: toggle_service
-            width: 30
+            width: '40dp'
             size_hint_x: None
             on_press: root.toggle_service_state()
             img_play: img_play
@@ -130,7 +130,7 @@ Calendar:
                source: 'res/ic_stop_white_48dp.png'
                center_y: self.parent.center_y
                center_x: self.parent.center_x
-               size: 30, 30
+               size: '40dp', '40dp'
                allow_stretch: True
             Image:
                id: img_play
@@ -138,11 +138,11 @@ Calendar:
                source: 'res/ic_play_arrow_white_48dp.png'
                center_y: self.parent.center_y
                center_x: self.parent.center_x
-               size: 30, 30
+               size: '40dp', '40dp'
                allow_stretch: True
 
          Label:
-            text: "Parking App"
+            text: "AndroidPark(ing)"
       PageLayout:
          Month:
             id: current_month
@@ -154,7 +154,7 @@ Calendar:
             label: "next"
 
 <Header>:
-   height: 30
+   height: '30dp'
    size_hint_y: None
    Button:
       text: root.text
@@ -172,9 +172,9 @@ Calendar:
             pos: self.pos
             size: self.size
       BoxLayout:
-         padding: [10,10,10,1]
-         spacing: [2,2]
-         height: 40
+         padding: ['10dp','10dp','10dp','1dp']
+         spacing: ['2dp','2dp']
+         height: '40dp'
          size_hint_y: None
          Button:
             id: month_name
@@ -182,8 +182,8 @@ Calendar:
       GridLayout:
          id: month
          cols: 7
-         padding: [10,1,10,10]
-         spacing: [2,2]
+         padding: ['10dp','1dp','10dp','10dp']
+         dpacing: ['2dp','2dp']
 
 <Day>:
    day_button: day_button
@@ -201,4 +201,4 @@ Calendar:
    Label:
       text: root.mask(root.value) or ''
       pos: root.pos
-      font_size: '15sp'
+      font_size: '15dp'

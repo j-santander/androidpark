@@ -84,7 +84,7 @@ android.ndk_path = /opt/android-ndk-r9c
 android.sdk_path = /opt/android-sdk
 
 # (str) python-for-android git clone directory (if empty, it will be automatically cloned from github)
-#android.p4a_dir =
+android.p4a_dir = /home/julian/work/python-for-android
 
 # (list) python-for-android whitelist
 #android.p4a_whitelist =
@@ -127,7 +127,7 @@ android.sdk_path = /opt/android-sdk
 #android.wakelock = False
 
 # (list) Android application meta-data to set (key=value format)
-#android.meta_data =
+android.meta_data = presplash-fit=width
 
 # (list) Android library project to add (will be added in the
 # project.properties automatically.)
