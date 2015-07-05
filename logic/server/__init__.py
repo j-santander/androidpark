@@ -117,7 +117,7 @@ class ServerInterface:
                 })
 
                 if r.status_code != requests.codes.ok:
-                    Logger.debug("Failed request on " + self.host + ", response:" + r)
+                    Logger.error("Failed request on " + self.host + ", response:" + r)
                     continue
 
                 # Parse the web page to obtain the result message

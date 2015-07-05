@@ -26,9 +26,11 @@ class CalendarApp(App):
 
     def on_pause(self):
         self.query_thread.on_pause()
+        return True
 
     def on_resume(self):
-        self.query_thread_on_resume()
+        self.query_thread.on_resume()
+        return True
 
     def do_refresh(self,calendar):
         self.queue.put(Refresh(calendar,App.get_running_app().config))

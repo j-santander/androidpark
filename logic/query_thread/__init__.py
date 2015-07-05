@@ -6,6 +6,8 @@ from kivy.logger import Logger
 from kivy.lib import osc
 import pickle
 import datetime
+from time import sleep
+
 
 class Ping:
     def __init__(self, calendar, config):
@@ -71,10 +73,13 @@ class QueryThread:
         while not self.stopped:
             try:
                 # First check the osc
-                osc.readQueue(self.oscid)
-                event = self.queue.get(block=True, timeout=2)
-                event.call(self)
-                self.check_timeout()
+                if self.oscid is not None:
+                    osc.readQueue(self.oscid)
+                    event = self.queue.get(block=True, timeout=2)
+                    event.call(self)
+                    self.check_timeout()
+                else:
+                    sleep(.1)
             except Empty:
                 self.check_timeout()
 
@@ -85,11 +90,13 @@ class QueryThread:
 
     def on_pause(self):
         osc.dontListen(self.oscid)
+        self.oscid = None
         self.pending = {}
 
     def on_stop(self):
         Logger.debug("on_stop()")
         osc.dontListen(self.oscid)
+        self.oscid = None
         self.pending = {}
         self.stopped = True
 
