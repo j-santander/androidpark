@@ -4,15 +4,36 @@ import threading
 from Queue import Queue, Empty
 from kivy.logger import Logger
 from kivy.lib import osc
+from kivy.app import App
+
 import pickle
 import datetime
 from time import sleep
 
 
-class Ping:
-    def __init__(self, calendar, config):
+class Request(object):
+    def __init__(self):
+        self.id=None
+        self.endtime=None
+        pass
+
+    def call(self,queue):
+        pass
+
+    def callback(self, msg):
+        pass
+
+    def timedout(self):
+        pass
+
+    def get_timer(self):
+        return int(App.get_running_app().config.get('timers','timeout'))
+
+
+class Ping(Request):
+    def __init__(self, calendar):
+        super(Ping, self).__init__()
         self.calendar = calendar
-        self.config = config
 
     def call(self, queue):
         queue.send_ping(self)
@@ -23,11 +44,14 @@ class Ping:
     def timedout(self):
         self.calendar.ping_back(False,None)
 
+    def get_timer(self):
+        return 2
 
-class Refresh:
-    def __init__(self, calendar, config):
+
+class Refresh(Request):
+    def __init__(self, calendar):
+        super(Refresh, self).__init__()
         self.calendar = calendar
-        self.config = config
 
     def call(self, queue):
         queue.send_query(self)
@@ -40,10 +64,10 @@ class Refresh:
         self.calendar.update_callback(None, None,'Sin respuesta del servidor')
 
 
-class Modify:
-    def __init__(self, calendar, config, operations):
+class Modify(Request):
+    def __init__(self, calendar, operations):
+        super(Modify, self).__init__()
         self.calendar = calendar
-        self.config = config
         self.operations = operations
 
     def call(self, queue):
@@ -75,9 +99,10 @@ class QueryThread:
                 # First check the osc
                 if self.oscid is not None:
                     osc.readQueue(self.oscid)
-                    event = self.queue.get(block=True, timeout=2)
+                    event = self.queue.get(block=True, timeout=1)
                     event.call(self)
                     self.check_timeout()
+                    sleep(.1)
                 else:
                     sleep(.1)
             except Empty:
@@ -117,21 +142,21 @@ class QueryThread:
         pickle_msg = pickle.dumps(
             {'request': 'query',
              'id': self.save_id(refresh),
-             'config': refresh.config})
+             'config': self.get_config()})
         osc.sendMsg('/android_park', [pickle_msg, ], port=3333)
 
     def send_ping(self, refresh):
         pickle_msg = pickle.dumps(
             {'request': 'ping',
              'id': self.save_id(refresh),
-             'config': refresh.config})
+             'config': self.get_config()})
         osc.sendMsg('/android_park', [pickle_msg, ], port=3333)
 
     def send_modify(self, modify):
         pickle_msg = pickle.dumps(
             {'request': 'modify',
              'id': self.save_id(modify),
-             'config': modify.config,
+             'config': self.get_config(),
              'operations': modify.operations})
 
         osc.sendMsg('/android_park', [pickle_msg, ], port=3333)
@@ -141,10 +166,13 @@ class QueryThread:
         self.pending[id] = request
         self.next_id += 1
         now = datetime.datetime.now()
-        timeout = int(request.config.get('timers','timeout'))
+        timeout = request.get_timer()
         request.endtime = now + datetime.timedelta(seconds=timeout)
         request.id = id
         return id
+
+    def get_config(self):
+        return App.get_running_app().config
 
     def get_id(self, id):
         if id in self.pending:
@@ -157,4 +185,5 @@ class QueryThread:
         now = datetime.datetime.now()
         timedout_id = [id for id in self.pending if self.pending[id].endtime < now]
         timedout = [self.get_id(id) for id in timedout_id]
+        map(lambda (x): Logger.error("Time out on %d" % x.id),timedout)
         map(lambda (x): x.timedout(), timedout)

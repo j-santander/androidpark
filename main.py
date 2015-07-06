@@ -33,13 +33,13 @@ class CalendarApp(App):
         return True
 
     def do_refresh(self,calendar):
-        self.queue.put(Refresh(calendar,App.get_running_app().config))
+        self.queue.put(Refresh(calendar))
 
     def do_ping(self,calendar):
-        self.queue.put(Ping(calendar,App.get_running_app().config))
+        self.queue.put(Ping(calendar))
 
     def do_send(self,calendar,operations):
-        self.queue.put(Modify(calendar,App.get_running_app().config,operations))
+        self.queue.put(Modify(calendar,operations))
 
     def build_config(self,config):
         #config.setdefaults('credentials',

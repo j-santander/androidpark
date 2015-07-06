@@ -8,8 +8,11 @@ from kivy.logger import Logger
 from kivy.lib import osc
 from logic.server import ServerInterface,ServerException
 from logic.daystatus import DayStatus
+from Queue import Queue, Empty
+
 import datetime
 import pytz
+import threading
 
 import pickle
 
@@ -18,6 +21,11 @@ import pickle
 class ServerThread:
     def __init__(self):
         Logger.debug("Service is running")
+        # Initialize internal queue
+        self.thread = threading.Thread(name='execution', target=self.async_run)
+        self.internal_queue = Queue()
+        self.thread.start()
+        # Initialize OSC
         osc.init()
         self.oscid = osc.listen(ipAddr='127.0.0.1', port=3333)
         osc.bind(self.oscid, self.handle_message, '/android_park')
@@ -25,11 +33,22 @@ class ServerThread:
         self.pending = {}
         self.last_time = None
         self.config = None
+        # Initialize timezones
         self.met=pytz.timezone('Europe/Madrid')
         self.t1=datetime.time(hour=0,minute=0,second=0,tzinfo=self.met) # 00:00
         self.t2=datetime.time(hour=15,minute=0,second=0,tzinfo=self.met) # 15:00
         self.t3=datetime.time(hour=17,minute=30,second=0,tzinfo=self.met) # 17:30
         self.t4=datetime.time(hour=23,minute=59,second=59,tzinfo=self.met) # 23:59
+
+    def async_run(self):
+        while True:
+            try:
+                event = self.internal_queue.get(block=True, timeout=1)
+                event()
+            except Empty:
+                pass
+            except Exception as e:
+                Logger.error("Service:"+str(e))
 
     def handle_message(self, message, *args):
         pickle_msg = message[2]
@@ -41,12 +60,13 @@ class ServerThread:
         self.server.config(self.config)
 
         if msg['request'] == 'ping':
+            # Reply immediatelly to pings.
             self.ping(msg['id'])
         if msg['request'] == 'query':
-            self.query(msg['id'])
+            self.internal_queue.put(lambda: self.query(msg['id']))
         if msg['request'] == 'modify':
             self.pending=msg['operations']
-            self.modify(msg['id'])
+            self.internal_queue.put(lambda: self.modify(msg['id']))
 
     def run(self):
         while True:
@@ -61,7 +81,7 @@ class ServerThread:
         self.send_ping_result(id)
 
     def query(self,id):
-        Logger.debug("Calling query id:%s " % id)
+        Logger.debug("Calling query id: %s " % id)
         try:
             result=self.server.query()
             self.update_pending(result)
