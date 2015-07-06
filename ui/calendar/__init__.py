@@ -56,15 +56,15 @@ class Calendar(FloatLayout):
 
 
     def open_settings(self):
-        App.get_running_app().open_settings()
+        self.app.open_settings()
 
     def toggle_service_state(self):
         if self.service_running:
             self.service_running = False
-            App.get_running_app().stop_service()
+            self.app.stop_service()
         else:
             self.service_running = True
-            App.get_running_app().start_service()
+            self.app.start_service()
 
     def update_request(self):
         if not self.service_running:
@@ -75,7 +75,7 @@ class Calendar(FloatLayout):
         Logger.debug("Update start")
         self.last_update = datetime.datetime.now()
         self.querying.open()
-        App.get_running_app().do_refresh(self)
+        self.app.do_refresh(self)
 
     def update(self, state,pending,status=None):
         if not state:
@@ -105,16 +105,20 @@ class Calendar(FloatLayout):
         now = datetime.datetime.now()
         self.ping_request()
 
-        if App.get_running_app().config.get('credentials','username') == "":
-            App.get_running_app().open_settings()
+        if not self.is_config_ready():
+            self.open_settings()
 
-        refresh=int(App.get_running_app().config.get("timers","data_refresh"))*60
-        if self.service_running and \
-                (self.last_update is None or (now - self.last_update).total_seconds() > refresh):
+        refresh=int(self.app.config.get("timers","data_refresh"))*60
+
+        if self.service_running and self.is_config_ready() and \
+               (self.last_update is None or (now - self.last_update).total_seconds() > refresh):
             self.update_request()
 
     def ping_request(self):
-        App.get_running_app().do_ping(self)
+        self.app.do_ping(self)
+
+    def is_config_ready(self):
+        return (self.app.config.get('credentials','username') != "") and (self.app.config.get('credentials','password') != "")
 
     def ping_back(self,value,config):
         if self.service_running != value:
@@ -145,7 +149,7 @@ class Calendar(FloatLayout):
         request_count = len([x for x in operations if operations[x] == 2])
         self.confirm.text = "Se liberarán %d plazas, se quitará la solicitud para %d plazas y se solicitarán %d nuevas plazas" \
                             % (free_count, unrequest_count, request_count)
-        self.confirm.on_accept=lambda: App.get_running_app().do_send(self, operations)
+        self.confirm.on_accept=lambda: self.app.do_send(self, operations)
         self.confirm.open()
 
     def init(self):
@@ -158,6 +162,7 @@ class Calendar(FloatLayout):
         self.error = Error()
         self.error.dismiss()
         self.last_update = None
+        self.app=App.get_running_app()
         # do the first update
         Clock.schedule_once(self.timer_callback, 1)
         # ... and then do every 5 s

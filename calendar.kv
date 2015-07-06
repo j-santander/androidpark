@@ -24,7 +24,6 @@ Calendar:
       BoxLayout:
          orientation: "horizontal"
          padding: ['10dp','10dp','10dp','10dp']
-         size_hint_y: None
          Label:
             text: root.text
             text_size: self.size
@@ -34,6 +33,7 @@ Calendar:
          padding: ['10dp','10dp','10dp','10dp']
          orientation: "horizontal"
          Button:
+            height: '40dp'
             size_hint_y: 1/5.
             id: ok_button
             text: "OK"
@@ -54,7 +54,6 @@ Calendar:
       orientation: "vertical"
       BoxLayout:
          orientation: "horizontal"
-         size_hint_y: None
          padding: ['10dp','10dp','10dp','10dp']
          Label:
             text: root.text
@@ -65,7 +64,6 @@ Calendar:
          padding: ['10dp','10dp','10dp','10dp']
          orientation: "horizontal"
          Button:
-            size_hint_y: None
             height: '40dp'
             id: ok_button
             text: "OK"
@@ -183,7 +181,7 @@ Calendar:
          id: month
          cols: 7
          padding: ['10dp','1dp','10dp','10dp']
-         dpacing: ['2dp','2dp']
+         spacing: ['2dp','2dp']
 
 <Day>:
    day_button: day_button
