@@ -4,7 +4,7 @@ import os, sys
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from time import sleep
-from kivy.logger import Logger
+from logic import L
 from kivy.lib import osc
 from logic.server import ServerInterface,ServerException
 from logic.daystatus import DayStatus
@@ -13,6 +13,7 @@ from Queue import Queue, Empty
 import datetime
 import pytz
 import threading
+import traceback
 
 import pickle
 
@@ -20,7 +21,7 @@ import pickle
 
 class ServerThread:
     def __init__(self):
-        Logger.debug("Service is running")
+        L.debug("Service is running")
         # Initialize internal queue
         self.thread = threading.Thread(name='execution', target=self.async_run)
         self.internal_queue = Queue()
@@ -48,11 +49,13 @@ class ServerThread:
             except Empty:
                 pass
             except Exception as e:
-                Logger.error("Service:"+str(e))
+                L.error("Exception:\n"+traceback.format_exc())
 
     def handle_message(self, message, *args):
         pickle_msg = message[2]
         msg = pickle.loads(pickle_msg)
+        L.debug("Received message %s" % msg['request'])
+
         if self.server is None:
             self.server = ServerInterface()
 
@@ -68,6 +71,8 @@ class ServerThread:
             self.pending=msg['operations']
             self.internal_queue.put(lambda: self.modify(msg['id']))
 
+        L.debug("End Received message %s" % msg['request'])
+
     def run(self):
         while True:
             osc.readQueue(self.oscid)
@@ -81,7 +86,7 @@ class ServerThread:
         self.send_ping_result(id)
 
     def query(self,id):
-        Logger.debug("Calling query id: %s " % id)
+        L.debug("Calling query id: %s " % id)
         try:
             result=self.server.query()
             self.update_pending(result)
@@ -90,7 +95,7 @@ class ServerThread:
             self.send_query_result(id,None,self.pending,e.status)
 
     def modify(self,id):
-        Logger.debug("Calling modify id:%s " % id)
+        L.debug("Calling modify id:%s " % id)
         try:
             result=self.server.modify(self.pending)
             self.last_time = datetime.datetime.now(tz=self.met)
@@ -101,7 +106,7 @@ class ServerThread:
 
 
     def send_modify_result(self, id, status=None):
-        Logger.debug("Send modify result %d" % id)
+        L.debug("Send modify result %d" % id)
         pickle_msg = pickle.dumps({
             'response': 'modify',
             'id': id,
@@ -110,7 +115,7 @@ class ServerThread:
 
 
     def send_query_result(self, id, result, pending,status=None):
-        Logger.debug("Send query result %d" % id)
+        L.debug("Send query result %d" % id)
         pickle_msg = pickle.dumps({
             'response': 'query',
             'id': id,
@@ -120,7 +125,7 @@ class ServerThread:
         osc.sendMsg('/android_park', [pickle_msg, ], port=3334)
 
     def send_ping_result(self, id):
-        Logger.debug("Send ping result %d" % id)
+        L.debug("Send ping result %d" % id)
         pickle_msg = pickle.dumps({
             'response': 'ping',
             'id': id,
@@ -154,11 +159,11 @@ class ServerThread:
         '''
         to_delete=[]
 
-        Logger.debug("pending (before) "+str(self.pending))
+        L.debug("pending (before) "+str(self.pending))
         for i in sorted(self.pending):
             today = datetime.datetime.now(tz=self.met)
             if (i.month - today.month) not in (0, 1):
-                Logger.error(str(i) + " is neither current nor next month")
+                L.error(str(i) + " is neither current nor next month")
                 to_delete.append(i)
                 continue
             if self.pending[i]==DayStatus.TO_FREE:
@@ -179,8 +184,8 @@ class ServerThread:
         for i in to_delete:
             del self.pending[i]
 
-        Logger.debug("pending (after) "+str(self.pending))
+        L.debug("pending (after) "+str(self.pending))
 
 if __name__ == '__main__':
-    print(__file__)
+    L.COMPONENT="Service"
     ServerThread().run()

@@ -1,7 +1,8 @@
 # -*- encoding: utf-8 -*-
 from logic.daystatus import DayStatus
-from kivy.logger import Logger
+from logic import L
 
+import traceback
 import requests
 import datetime
 import bs4
@@ -23,7 +24,7 @@ class ServerInterface:
         self.password = appconfig.get('credentials','password')
 
     def login(self):
-        Logger.debug("Starting login")
+        L.debug("Starting login")
         #
         # Start a session so that we can reuse cookies
         #
@@ -48,16 +49,16 @@ class ServerInterface:
         #
         # Parse the web page we have read
         #
-        Logger.debug("Parsing query result")
+        L.debug("Parsing query result")
 
-        state=self.parse_months(r.text)
+        state=self.parse_months(self.get_response_text(r))
 
         if state is None:
             raise ServerException("Problema consultando con el servidor, es probable que el usuario/contraseña sean incorrectos")
         return state
 
     def query(self):
-        Logger.debug("Starting query")
+        L.debug("Starting query")
 
         state=None
 
@@ -80,17 +81,16 @@ class ServerInterface:
             #
             # Parse the web page we have read
             #
-            Logger.debug("Parsing query result")
-            state = self.parse_months(r.text)
+            L.debug("Parsing query result")
+            state = self.parse_months(self.get_response_text(r))
 
             if state is None:
-                Logger.debug("parsing failed, login might have failed")
+                L.debug("parsing failed, login might have failed")
                 self.session = None
                 return self.query()
 
         except (KeyboardInterrupt, requests.ConnectionError, ServerException) as e:
-            status = str(e)
-            Logger.error(status)
+            L.error(traceback.format_exc())
             # try to login again
             self.session = None
             return self.query()
@@ -106,10 +106,10 @@ class ServerInterface:
         for i in sorted(operations):
             today = datetime.datetime.now(tz=self.met)
             if (i.month - today.month) not in (0, 1):
-                Logger.error(str(i) + " is neither current nor next month")
+                L.error(str(i) + " is neither current nor next month")
                 continue
             try:
-                Logger.debug("Requesting " + str(i) + ": " + self.map_operation(operations[i]))
+                L.debug("Requesting " + str(i) + ": " + self.map_operation(operations[i]))
                 r = self.session.post("http://" + self.host + "/perfil.php", data={
                     "dia": i.day,
                     "mes": i.month - today.month,
@@ -117,17 +117,22 @@ class ServerInterface:
                 })
 
                 if r.status_code != requests.codes.ok:
-                    Logger.error("Failed request on " + self.host + ", response:" + r)
+                    L.error("Failed request on " + self.host + ", response:" + r)
                     continue
 
                 # Parse the web page to obtain the result message
-                Logger.debug(self.parse_result(r.text))
-                last_text=r.text
+                last_text=self.get_response_text(r)
+                L.debug("Modify result: "+self.parse_result(last_text))
             except (KeyboardInterrupt, requests.ConnectionError) as e:
-                Logger.debug("Petición falló en " + self.host + ", con:\n" + str(e))
+                L.debug("Petición falló en " + self.host + ", con:\n" + traceback.format_exc())
 
         return self.parse_months(last_text)
 
+
+    def get_response_text(self,r):
+        # I guess the pag is in in ISO-8859-1, although
+        # it says is in UTF-8
+        return r.content.decode('iso-8859-1').encode('utf-8')
 
     def map_operation(self, o):
         """
