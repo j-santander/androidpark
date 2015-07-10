@@ -10,7 +10,7 @@ from ui.settings import SettingPassword
 from logic.query_thread import QueryThread,Refresh,Modify,Ping
 from Queue import Queue
 from kivy.utils import platform
-from kivy.logger import Logger
+from logic import L
 
 
 class CalendarApp(App):
@@ -58,7 +58,7 @@ class CalendarApp(App):
     def start_service(self):
         if self.service is not None:
             return
-        Logger.info("Trying to start service")
+        L.info("Trying to start service")
         if platform == 'android':
             from android import AndroidService
             service = AndroidService('android park service', 'running')
@@ -69,7 +69,7 @@ class CalendarApp(App):
     def stop_service(self):
         if self.service is None:
             return
-        Logger.info("Trying to stop service")
+        L.info("Trying to stop service")
         if platform == 'android':
             from android import AndroidService
             self.service.stop()

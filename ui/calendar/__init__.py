@@ -2,7 +2,7 @@
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.modalview import ModalView
 from kivy.clock import Clock
-from kivy.logger import Logger
+from logic import L
 from kivy.app import App
 
 from kivy.properties import ObjectProperty, StringProperty
@@ -72,14 +72,14 @@ class Calendar(FloatLayout):
             self.error.open()
             return
 
-        Logger.debug("Update start")
+        L.debug("Update start")
         self.last_update = datetime.datetime.now()
         self.querying.open()
         self.app.do_refresh(self)
 
     def update(self, state,pending,status=None):
         if not state:
-            Logger.error("state is None")
+            L.error("state is None")
             self.querying.dismiss()
             if status is not None:
                 self.error.text=status
@@ -92,12 +92,12 @@ class Calendar(FloatLayout):
         self.unrequest_month(self.next_month)
         self.current_month.update(state,pending)
         self.next_month.update(state,pending)
-        Logger.debug("Update ends")
+        L.debug("Update ends")
         self.querying.dismiss()
 
     def update_callback(self, state, pending, status=None):
         if status is not None:
-            Logger.debug("Update status: " + str(status)+" pending operations: "+str(pending))
+            L.debug("Update status: " + str(status)+" pending operations: "+str(pending))
 
         Clock.schedule_once(lambda (dt): self.update(state,pending,status))
 
@@ -122,7 +122,7 @@ class Calendar(FloatLayout):
 
     def ping_back(self,value,config):
         if self.service_running != value:
-            Logger.debug("Service state change: "+str(value))
+            L.debug("Service state change: "+str(value))
         self.service_running = value
 
     def send(self):
@@ -131,7 +131,7 @@ class Calendar(FloatLayout):
             self.error.open()
             return
 
-        Logger.debug("Send start")
+        L.debug("Send start")
         days = self.get_days_with_change()
         operations = {}
         for d in days:

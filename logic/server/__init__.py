@@ -122,7 +122,7 @@ class ServerInterface:
 
                 # Parse the web page to obtain the result message
                 last_text=self.get_response_text(r)
-                L.debug("Modify result: "+self.parse_result(last_text))
+                L.info("Modify result: "+self.parse_result(last_text))
             except (KeyboardInterrupt, requests.ConnectionError) as e:
                 L.debug("Petición falló en " + self.host + ", con:\n" + traceback.format_exc())
 
@@ -132,7 +132,8 @@ class ServerInterface:
     def get_response_text(self,r):
         # I guess the pag is in in ISO-8859-1, although
         # it says is in UTF-8
-        return r.content.decode('iso-8859-1').encode('utf-8')
+        #return r.content.decode('iso-8859-1').encode('utf-8')
+        return r.text
 
     def map_operation(self, o):
         """

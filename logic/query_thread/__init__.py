@@ -2,7 +2,7 @@
 import threading
 
 from Queue import Queue, Empty
-from kivy.logger import Logger
+from logic import L
 from kivy.lib import osc
 from kivy.app import App
 
@@ -57,7 +57,7 @@ class Refresh(Request):
         queue.send_query(self)
 
     def callback(self, msg):
-        Logger.debug("Got a response %s for %d" % (msg['response'], msg['id']))
+        L.debug("Got a response %s for %d" % (msg['response'], msg['id']))
         self.calendar.update_callback(msg['result'],msg['pending'],msg['status'])
 
     def timedout(self):
@@ -74,7 +74,7 @@ class Modify(Request):
         queue.send_modify(self)
 
     def callback(self, msg):
-        Logger.debug("Got a response %s for %d" % (msg['response'], msg['id']))
+        L.debug("Got a response %s for %d" % (msg['response'], msg['id']))
         self.calendar.update_request()
 
     def timedout(self):
@@ -119,7 +119,7 @@ class QueryThread:
         self.pending = {}
 
     def on_stop(self):
-        Logger.debug("on_stop()")
+        L.debug("on_stop()")
         osc.dontListen(self.oscid)
         self.oscid = None
         self.pending = {}
@@ -134,9 +134,9 @@ class QueryThread:
             if req is not None:
                 req.callback(msg)
             else:
-                Logger.debug("Ignoring unknown response %d" % msg['id'])
+                L.debug("Ignoring unknown response %d" % msg['id'])
         else:
-            Logger.debug("Got a request %s for %d" % (msg['response'], msg['id']))
+            L.debug("Got a request %s for %d" % (msg['response'], msg['id']))
 
     def send_query(self, refresh):
         pickle_msg = pickle.dumps(
@@ -185,5 +185,5 @@ class QueryThread:
         now = datetime.datetime.now()
         timedout_id = [id for id in self.pending if self.pending[id].endtime < now]
         timedout = [self.get_id(id) for id in timedout_id]
-        map(lambda (x): Logger.error("Time out on %d" % x.id),timedout)
+        map(lambda (x): L.error("Time out on %d" % x.id),timedout)
         map(lambda (x): x.timedout(), timedout)

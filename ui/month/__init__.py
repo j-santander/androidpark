@@ -1,6 +1,6 @@
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
-from kivy.logger import Logger
+from logic import L
 import datetime
 import calendar
 
@@ -17,7 +17,7 @@ class Month(BoxLayout):
     calendar = ObjectProperty()
 
     def update(self,state,pending):
-        Logger.debug("pending operations: "+str(pending))
+        L.debug("pending operations: "+str(pending))
         for d in self.all_days:
             self.all_days[d].day=state[d]
             if pending is not None and d in pending:
@@ -28,7 +28,7 @@ class Month(BoxLayout):
                 self.get_day(d).set()
 
     def init(self):
-        Logger.debug("init of "+self.label)
+        L.debug("init of "+self.label)
         first_of_month=None
         if self.label == "current":
             today = datetime.date.today()
