@@ -39,10 +39,10 @@ class Ping(Request):
         queue.send_ping(self)
 
     def callback(self, msg):
-        self.calendar.ping_back(True,msg['config'])
+        self.calendar.ping_callback(True,msg['config'])
 
     def timedout(self):
-        self.calendar.ping_back(False,None)
+        self.calendar.ping_callback(False,None)
 
     def get_timer(self):
         return 2
@@ -54,14 +54,14 @@ class Refresh(Request):
         self.calendar = calendar
 
     def call(self, queue):
-        queue.send_query(self)
+        queue.send_refresh(self)
 
     def callback(self, msg):
         L.debug("Got a response %s for %d" % (msg['response'], msg['id']))
-        self.calendar.update_callback(msg['result'],msg['pending'],msg['status'])
+        self.calendar.refresh_callback(msg['result'],msg['pending'],msg['status'])
 
     def timedout(self):
-        self.calendar.update_callback(None, None,'Sin respuesta del servidor')
+        self.calendar.refresh_callback(None, None,'Sin respuesta del servidor')
 
 
 class Modify(Request):
@@ -75,7 +75,12 @@ class Modify(Request):
 
     def callback(self, msg):
         L.debug("Got a response %s for %d" % (msg['response'], msg['id']))
-        self.calendar.update_request()
+        self.calendar.modify_callback()
+
+    def callback_partial(self,msg):
+        L.debug("Got a partial response %s for %d" % (msg['response'], msg['id']))
+        self.calendar.modify_partial_callback(msg['status'])
+
 
     def timedout(self):
         pass
@@ -130,15 +135,22 @@ class QueryThread:
         msg = pickle.loads(pickle_msg)
 
         if 'response' in msg:
-            req = self.get_id(msg['id'])
+            if 'is_partial' in msg and msg['is_partial']:
+                keep=True
+            else:
+                keep=False
+            req = self.get_id(msg['id'],keep)
             if req is not None:
-                req.callback(msg)
+                if keep:
+                    req.callback_partial(msg)
+                else:
+                    req.callback(msg)
             else:
                 L.debug("Ignoring unknown response %d" % msg['id'])
         else:
             L.debug("Got a request %s for %d" % (msg['response'], msg['id']))
 
-    def send_query(self, refresh):
+    def send_refresh(self, refresh):
         pickle_msg = pickle.dumps(
             {'request': 'query',
              'id': self.save_id(refresh),
@@ -174,11 +186,17 @@ class QueryThread:
     def get_config(self):
         return App.get_running_app().config
 
-    def get_id(self, id):
+    def get_id(self, id,keep=False):
         if id in self.pending:
-            req = self.pending[id]
-            del self.pending[id]
-            return req
+            request = self.pending[id]
+            if not keep:
+                del self.pending[id]
+            else:
+                # refresh the timer.
+                now = datetime.datetime.now()
+                timeout = request.get_timer()
+                request.endtime = now + datetime.timedelta(seconds=timeout)
+            return request
         return None
 
     def check_timeout(self):

@@ -8,7 +8,8 @@ Calendar:
 
 <Querying>:
    id: querying_popup
-   size_hint_y: .1
+   size_hint_y: None
+   height: '30dp'
    auto_dismiss: False
    Label:
       text: "Consultando..."
@@ -30,16 +31,19 @@ Calendar:
             valign: 'middle'
             halign: 'center'
       BoxLayout:
+         height: '60dp'
+         size_hint_y: None
          padding: ['10dp','10dp','10dp','10dp']
          orientation: "horizontal"
          Button:
             height: '40dp'
-            size_hint_y: 1/5.
+            size_hint_y: None
             id: ok_button
             text: "OK"
             on_press: root.accept()
          Button:
-            size_hint_y: 1/5.
+            size_hint_y: None
+            height: '40dp'
             id: cancel_button
             text: "Cancelar"
             on_press: root.cancel()
@@ -47,10 +51,11 @@ Calendar:
 <Error>:
    id: error_popup
    size_hint_x: .9
-   size_hint_y: None
+   size_hint_y: .5
    auto_dismiss: False
    ok_button: ok_button
    BoxLayout:
+      height:root.height
       orientation: "vertical"
       BoxLayout:
          orientation: "horizontal"
@@ -61,9 +66,12 @@ Calendar:
             valign: 'middle'
             halign: 'center'
       BoxLayout:
+         size_hint_y: None
+         height: '60dp'
          padding: ['10dp','10dp','10dp','10dp']
          orientation: "horizontal"
          Button:
+            size_hint_y: None
             height: '40dp'
             id: ok_button
             text: "OK"
@@ -75,6 +83,7 @@ Calendar:
    next_month: next_month
    service_state: False
    toggle_service: toggle_service
+   status_bar: status_bar
    BoxLayout:
       orientation: "vertical"
       BoxLayout:
@@ -98,7 +107,7 @@ Calendar:
          Button:
             width: '40dp'
             size_hint_x: None
-            on_press: root.send()
+            on_press: root.start_modify_request()
             Image:
                source: 'res/ic_file_upload_white_48dp.png'
                center_y: self.parent.center_y
@@ -108,7 +117,7 @@ Calendar:
          Button:
             width: '40dp'
             size_hint_x: None
-            on_press: root.update_request()
+            on_press: root.refresh_request()
             Image:
                source: 'res/ic_refresh_white_48dp.png'
                center_y: self.parent.center_y
@@ -150,6 +159,26 @@ Calendar:
             id: next_month
             calendar: root
             label: "next"
+      BoxLayout:
+         orientation: "vertical"
+         size_hint_y: None
+         padding: ['10dp','0dp','5dp','10dp']
+         height: '25dp'
+         canvas.before:
+            Color:
+               rgba: .1, .1, .1, 1
+            Rectangle:
+               pos: self.pos
+               size: self.size
+         Label:
+            id: status_bar
+            height: '20dp'
+            font_size: '10sp'
+            size_hint_y: None
+            valign: 'middle'
+            halign: 'left'
+            text: ""
+            text_size: self.size
 
 <Header>:
    height: '30dp'
@@ -171,7 +200,7 @@ Calendar:
             size: self.size
       BoxLayout:
          padding: ['10dp','10dp','10dp','1dp']
-         spacing: ['2dp','2dp']
+         spacing: '2dp'
          height: '40dp'
          size_hint_y: None
          Button:
@@ -181,7 +210,7 @@ Calendar:
          id: month
          cols: 7
          padding: ['10dp','1dp','10dp','10dp']
-         spacing: ['2dp','2dp']
+         spacing: '2dp'
 
 <Day>:
    day_button: day_button
@@ -191,6 +220,7 @@ Calendar:
       id: day_button
       halign: 'center'
       valign: 'middle'
+      font_size: '10sp'
       on_press: root.toggle()
 
 
@@ -199,4 +229,4 @@ Calendar:
    Label:
       text: root.mask(root.value) or ''
       pos: root.pos
-      font_size: '15dp'
+      font_size: '15sp'

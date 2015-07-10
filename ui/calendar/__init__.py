@@ -44,13 +44,16 @@ class Calendar(FloatLayout):
     error = ObjectProperty()
     toggle_service = ObjectProperty()
     service_running = ObjectProperty()
-    last_update = ObjectProperty()
+    last_update = ObjectProperty(allownone=True)
+    status_bar = ObjectProperty()
 
     def on_service_running(self,instance, value):
         if value:
+            self.status_bar.text=""
             self.toggle_service.img_stop.opacity = 1
             self.toggle_service.img_play.opacity = 0
         else:
+            self.status_bar.text="Esperando por el servicio en segundo plano"
             self.toggle_service.img_stop.opacity = 0
             self.toggle_service.img_play.opacity = 1
 
@@ -66,18 +69,23 @@ class Calendar(FloatLayout):
             self.service_running = True
             self.app.start_service()
 
-    def update_request(self):
+    def refresh_request(self):
+        if not self.is_config_ready():
+            return
+
         if not self.service_running:
             self.error.text="El Servicio en segundo plano no está corriendo"
             self.error.open()
             return
 
-        L.debug("Update start")
+        L.debug("Query start")
         self.last_update = datetime.datetime.now()
         self.querying.open()
+        self.status_bar.text="Consultando al servidor del parking..."
         self.app.do_refresh(self)
 
-    def update(self, state,pending,status=None):
+    def update_info(self, state,pending,status=None):
+        self.status_bar.text=""
         if not state:
             L.error("state is None")
             self.querying.dismiss()
@@ -95,11 +103,11 @@ class Calendar(FloatLayout):
         L.debug("Update ends")
         self.querying.dismiss()
 
-    def update_callback(self, state, pending, status=None):
+    def refresh_callback(self, state, pending, status=None):
         if status is not None:
             L.debug("Update status: " + str(status)+" pending operations: "+str(pending))
 
-        Clock.schedule_once(lambda (dt): self.update(state,pending,status))
+        Clock.schedule_once(lambda (dt): self.update_info(state,pending,status))
 
     def timer_callback(self, dt):
         now = datetime.datetime.now()
@@ -112,20 +120,20 @@ class Calendar(FloatLayout):
 
         if self.service_running and self.is_config_ready() and \
                (self.last_update is None or (now - self.last_update).total_seconds() > refresh):
-            self.update_request()
+            self.refresh_request()
 
     def ping_request(self):
         self.app.do_ping(self)
 
-    def is_config_ready(self):
-        return (self.app.config.get('credentials','username') != "") and (self.app.config.get('credentials','password') != "")
-
-    def ping_back(self,value,config):
+    def ping_callback(self,value,config):
         if self.service_running != value:
             L.debug("Service state change: "+str(value))
         self.service_running = value
 
-    def send(self):
+    def is_config_ready(self):
+        return (self.app.config.get('credentials','username') != "") and (self.app.config.get('credentials','password') != "")
+
+    def start_modify_request(self):
         if not self.service_running:
             self.error.text="El Servicio en segundo plano no está corriendo"
             self.error.open()
@@ -149,8 +157,19 @@ class Calendar(FloatLayout):
         request_count = len([x for x in operations if operations[x] == 2])
         self.confirm.text = "Se liberarán %d plazas, se quitará la solicitud para %d plazas y se solicitarán %d nuevas plazas" \
                             % (free_count, unrequest_count, request_count)
-        self.confirm.on_accept=lambda: self.app.do_send(self, operations)
+        self.confirm.on_accept=lambda: self.modify_request(operations)
         self.confirm.open()
+
+    def modify_request(self,operations):
+        self.status_bar.text="Enviando petición al servidor del parking..."
+        self.app.do_modify(self, operations)
+
+    def modify_callback(self):
+        # Make the last_update None to force a refresh
+        self.last_update = None
+
+    def modify_partial_callback(self,status):
+        self.status_bar.text=status
 
     def init(self):
         self.querying = Querying()
@@ -164,7 +183,7 @@ class Calendar(FloatLayout):
         self.last_update = None
         self.app=App.get_running_app()
         # do the first update
-        Clock.schedule_once(self.timer_callback, 1)
+        Clock.schedule_once(self.timer_callback, 0)
         # ... and then do every 5 s
         Clock.schedule_interval(self.timer_callback, 5)
 

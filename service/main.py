@@ -97,7 +97,7 @@ class ServerThread:
     def modify(self,id):
         L.debug("Calling modify id:%s " % id)
         try:
-            result=self.server.modify(self.pending)
+            result=self.server.modify(self.pending,lambda (s):self.send_modify_partial_result(id,s))
             self.last_time = datetime.datetime.now(tz=self.met)
             self.update_pending(result)
             self.send_modify_result(id,"OK")
@@ -113,6 +113,14 @@ class ServerThread:
             'status': status})
         osc.sendMsg('/android_park', [pickle_msg, ], port=3334)
 
+    def send_modify_partial_result(self,id,status):
+        L.debug("Send modify partial result %d" % id)
+        pickle_msg = pickle.dumps({
+            'response': 'modify',
+            'is_partial': True,
+            'id': id,
+            'status': status})
+        osc.sendMsg('/android_park', [pickle_msg, ], port=3334)
 
     def send_query_result(self, id, result, pending,status=None):
         L.debug("Send query result %d" % id)

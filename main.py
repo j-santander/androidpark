@@ -38,7 +38,7 @@ class CalendarApp(App):
     def do_ping(self,calendar):
         self.queue.put(Ping(calendar))
 
-    def do_send(self,calendar,operations):
+    def do_modify(self,calendar,operations):
         self.queue.put(Modify(calendar,operations))
 
     def build_config(self,config):
@@ -128,7 +128,7 @@ class CalendarApp(App):
         settings.add_json_panel('Android Park',self.config, data=jsondata)
 
     def on_config_change(self, config, section, key, value):
-        self.root.update_request()
+        self.root.refresh_request()
 
 
 if __name__ == '__main__':

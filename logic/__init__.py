@@ -21,4 +21,4 @@ class L:
     @staticmethod
     def __format(s):
         t=threading.current_thread()
-        return L.COMPONENT+"_"+t.name+"/"+str(t.ident)+": "+s.encode('utf-8','ignore')
+        return L.COMPONENT+"_"+t.name+"/"+str(t.ident)+": "+s.encode('ascii','replace')

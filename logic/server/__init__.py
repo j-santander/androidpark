@@ -30,6 +30,11 @@ class ServerInterface:
         #
         self.session = requests.Session()
 
+        #self.session.proxies= {
+        #    "http": "http://es.proxy.lucent.com:8000",
+        #    "https": "http://es.proxy.lucent.com:8000",
+        #}
+
         #
         # Prepare the login request
         #
@@ -97,7 +102,7 @@ class ServerInterface:
 
         return state
 
-    def modify(self, operations):
+    def modify(self, operations,partial):
         if self.session is None:
             self.login()
 
@@ -118,11 +123,14 @@ class ServerInterface:
 
                 if r.status_code != requests.codes.ok:
                     L.error("Failed request on " + self.host + ", response:" + r)
+                    partial(str(i)+"`: Failed request on server response:" + r)
                     continue
 
                 # Parse the web page to obtain the result message
                 last_text=self.get_response_text(r)
-                L.info("Modify result: "+self.parse_result(last_text))
+                result=self.parse_result(last_text)
+                partial(""+result)
+                L.info(str(i)+": "+result)
             except (KeyboardInterrupt, requests.ConnectionError) as e:
                 L.debug("Petición falló en " + self.host + ", con:\n" + traceback.format_exc())
 
@@ -133,6 +141,7 @@ class ServerInterface:
         # I guess the pag is in in ISO-8859-1, although
         # it says is in UTF-8
         #return r.content.decode('iso-8859-1').encode('utf-8')
+        #return r.content.decode('iso-8859-1')
         return r.text
 
     def map_operation(self, o):
