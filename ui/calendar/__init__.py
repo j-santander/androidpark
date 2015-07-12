@@ -169,7 +169,8 @@ class Calendar(FloatLayout):
         self.last_update = None
 
     def modify_partial_callback(self,status):
-        self.status_bar.text=status
+        L.info(status)
+        self.status_bar.text=status.decode('utf-8','replace').encode('utf-8')
 
     def init(self):
         self.querying = Querying()

@@ -129,19 +129,17 @@ class ServerInterface:
                 # Parse the web page to obtain the result message
                 last_text=self.get_response_text(r)
                 result=self.parse_result(last_text)
-                partial(""+result)
+                if result=="":
+                    result='La modificación de '+str(i)+' no fue aceptada'
+                partial(result)
                 L.info(str(i)+": "+result)
             except (KeyboardInterrupt, requests.ConnectionError) as e:
-                L.debug("Petición falló en " + self.host + ", con:\n" + traceback.format_exc())
+                L.debug("Petición fallida en " + self.host + ", con:\n" + traceback.format_exc())
 
         return self.parse_months(last_text)
 
 
     def get_response_text(self,r):
-        # I guess the pag is in in ISO-8859-1, although
-        # it says is in UTF-8
-        #return r.content.decode('iso-8859-1').encode('utf-8')
-        #return r.content.decode('iso-8859-1')
         return r.text
 
     def map_operation(self, o):
@@ -181,9 +179,9 @@ class ServerInterface:
         spans = soup.select("span")
         for s in spans:
             if "red" in s.attrs['style']:
-                return s.string
-
-        return "unknown"
+                # We will return a str
+                return s.string.encode('utf-8')
+        return ""
 
     def parse_months(self, text):
         """

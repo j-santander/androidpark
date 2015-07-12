@@ -87,7 +87,7 @@ android.sdk_path = /opt/android-sdk
 android.p4a_dir = /home/jsantand/work/python-for-android
 
 # (list) python-for-android whitelist
-#android.p4a_whitelist =
+android.p4a_whitelist = encodings/iso8859_1*,encodings/cp1252*,encodings/utf_8*
 
 # (str) Android entry point, default is ok for Kivy-based app
 #android.entrypoint = org.renpy.android.PythonActivity

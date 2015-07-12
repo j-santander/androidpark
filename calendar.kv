@@ -149,7 +149,11 @@ Calendar:
                allow_stretch: True
 
          Label:
-            text: "AndroidPark(ing)"
+            id: status_bar
+            text_size: self.size
+            valign: 'top'
+            halign: 'center'
+            font_size: '10sp'
       PageLayout:
          Month:
             id: current_month
@@ -159,26 +163,6 @@ Calendar:
             id: next_month
             calendar: root
             label: "next"
-      BoxLayout:
-         orientation: "vertical"
-         size_hint_y: None
-         padding: ['10dp','0dp','5dp','10dp']
-         height: '25dp'
-         canvas.before:
-            Color:
-               rgba: .1, .1, .1, 1
-            Rectangle:
-               pos: self.pos
-               size: self.size
-         Label:
-            id: status_bar
-            height: '20dp'
-            font_size: '10sp'
-            size_hint_y: None
-            valign: 'middle'
-            halign: 'left'
-            text: ""
-            text_size: self.size
 
 <Header>:
    height: '30dp'
@@ -222,8 +206,6 @@ Calendar:
       valign: 'middle'
       font_size: '10sp'
       on_press: root.toggle()
-
-
 
 <SettingPassword>:
    Label:
