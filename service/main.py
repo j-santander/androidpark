@@ -174,6 +174,11 @@ class ServerThread:
             # Period 15:00 - 17:30: attempt 1 min (but only if there's something pending for tomorrow
             if f2>0 and (self.last_time is None or (now - self.last_time).total_seconds() > f2):
                 return True
+        if now.hour == 14 and now.minute > 50 and now.second > random.randange(0,60) \
+            and (now - self.last_time).total_seconds > (10*60):
+            # One final at 14:50 + random seconds
+            # and only if we haven't requested  more than 10 minutes ago.
+            return True
         return False
 
     def add_pattern(self):
