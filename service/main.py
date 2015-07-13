@@ -246,6 +246,7 @@ class ServerThread:
         :return: None
         '''
         to_delete=[]
+        to_add=[ i for i in result if result[i].status == DayStatus.REQUESTED ]
 
         L.debug("pending (before) "+str(self.pending))
         for i in sorted(self.pending):
@@ -271,6 +272,9 @@ class ServerThread:
 
         for i in to_delete:
             del self.pending[i]
+
+        for i in to_add:
+            self.pending[i]=DayStatus.TO_REQUEST
 
         L.debug("pending (after) "+str(self.pending))
 
