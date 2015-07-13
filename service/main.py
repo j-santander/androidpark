@@ -6,6 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from time import sleep
 from logic import L
 from kivy.lib import osc
+from kivy.utils import platform
 from logic.server import ServerInterface,ServerException
 from logic.daystatus import DayStatus
 from Queue import Queue, Empty
@@ -17,7 +18,15 @@ import traceback
 
 import pickle
 
-
+if platform == 'android':
+    from jnius import autoclass
+    Class = autoclass('java.lang.Class')
+    NotificationBuilder = autoclass('android.app.Notification$Builder')
+    PythonService = autoclass('org.renpy.android.PythonService')
+    PythonActivity = autoclass('org.renpy.android.PythonActivity')
+    PendingIntent = autoclass('android.app.PendingIntent')
+    Intent = autoclass('android.content.Intent')
+    Context = autoclass('android.content.Context')
 
 class ServerThread:
     def __init__(self):
@@ -101,6 +110,7 @@ class ServerThread:
         try:
             result=self.server.modify(self.pending,lambda (s):self.send_modify_partial_result(id,s))
             self.last_time = datetime.datetime.now(tz=self.met)
+            self.update_notification("Intento: "+self.last_time.strftime('%Y-%m-%d %H:%M'))
             self.update_pending(result)
             self.send_modify_result(id,"OK")
         except ServerException as e:
@@ -277,6 +287,24 @@ class ServerThread:
             self.pending[i]=DayStatus.TO_REQUEST
 
         L.debug("pending (after) "+str(self.pending))
+
+    def update_notification(self,text):
+        L.info("Notification: "+text)
+        if platform == 'android':
+            try:
+                service = PythonService.mService
+                builder = NotificationBuilder(service)
+                builder.setSmallIcon(service.getApplicationInfo().icon)
+                builder.setContentTitle("AndroidPark(ing)")
+                builder.setContentText(text)
+                contextIntent = Intent(service, Class.forName('org.renpy.android.PythonActivity'))
+                pIntent = PendingIntent.getActivity(service, 0, contextIntent,PendingIntent.FLAG_UPDATE_CURRENT)
+                builder.setContentIntent(pIntent)
+                manager = service.getSystemService(Context.NOTIFICATION_SERVICE)
+                manager.notify(1,builder.build())
+            except:
+                L.error("Exception:\n"+traceback.format_exc())
+
 
 if __name__ == '__main__':
     L.COMPONENT="Service"

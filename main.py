@@ -63,7 +63,7 @@ class CalendarApp(App):
         L.info("Trying to start service")
         if platform == 'android':
             from android import AndroidService
-            service = AndroidService('android park service', 'running')
+            service = AndroidService('AndroidPark(ing)', 'en ejecución...')
             service.start('service started')
             self.service = service
 
