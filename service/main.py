@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-import os, sys
+import os, sys, random
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -78,6 +78,8 @@ class ServerThread:
             osc.readQueue(self.oscid)
             if len(self.pending) > 0:
                 # Pending operations
+                if self.check_pattern():
+                    self.add_pattern()
                 if self.check_interval():
                     self.modify(-1)
             sleep(.1)
@@ -103,7 +105,6 @@ class ServerThread:
             self.send_modify_result(id,"OK")
         except ServerException as e:
             self.send_modify_result(id,e.status)
-
 
     def send_modify_result(self, id, status=None):
         L.debug("Send modify result %d" % id)
@@ -140,6 +141,22 @@ class ServerThread:
             'config': self.config})
         osc.sendMsg('/android_park', [pickle_msg, ], port=3334)
 
+    def check_pattern(self):
+        random.seed()
+        now=datetime.datetime.now(tz=self.met)
+        pattern = self.config.get("general","pattern")
+        next_month=(now.month+1)
+        if next_month==13:
+            next_month=1
+        pending_for_next_month=[i for i in self.pending if i.month==next_month]
+        random_minute=random.randrange(0,60)
+        if pattern != "" and now.day == 1 and now.hour > 11 and now.minute > random_minute and len(pending_for_next_month)==0:
+            # Add the pattern the first day of the month, at the 11:XXam, and
+            # only if there's nothing pending for next month.
+            return True
+        else:
+            return False
+
     def check_interval(self):
         '''
         Check if it is time for a new attempt
@@ -151,13 +168,71 @@ class ServerThread:
         f2 = int(self.config.get("timers","frequency2"))*60
         if (self.t1 <= now.time() < self.t2) or (self.t3 <= now.time() < self.t4):
             # Period 00:00 - 14:59: attempt every 30 min
-            if self.last_time is None or (now - self.last_time).total_seconds() > f1:
+            if f1>0 and (self.last_time is None or (now - self.last_time).total_seconds() > f1):
                 return True
         if (self.t2 <= now.time() < self.t3) and tomorrow in self.pending:
             # Period 15:00 - 17:30: attempt 1 min (but only if there's something pending for tomorrow
-            if self.last_time is None or (now - self.last_time).total_seconds() > f2:
+            if f2>0 and (self.last_time is None or (now - self.last_time).total_seconds() > f2):
                 return True
         return False
+
+    def add_pattern(self):
+        pattern = self.config.get("general","pattern")
+        dates_from_pattern = [t[1] for t in self.parse_spec(pattern) if t[0]]
+        L.debug("Using pattern %s, adding " % (pattern,str(dates_from_pattern)))
+        self.pending.update({ t:DayStatus.TO_REQUEST for t in dates_from_pattern})
+        if len(dates_from_pattern)>0:
+            self.modify(-1)
+
+    def parse_spec(self,text):
+        # This is going to be a comma separated list of tokens:
+        # - token: <weekday>|<date>
+        # - neg: !<token>
+        # - all: all=L,M,X,J,V
+        # - weekday: <raw>
+        # - raw: L,M,X,J,V (L=cL,nL)
+        # - current: c<raw>
+        # - next: n<raw>
+        # - date: [[YYYY-]MM-]DD
+
+        specs = text.split(',')
+        result = []
+        for s in specs:
+            tk = self.parse_token(s)
+            if tk is not None:
+                result.extend(tk)
+        return result
+
+    def parse_token(self,s):
+        # Parse individual tokens.
+        s = s.strip()
+        if len(s) == 0:
+            return None
+        if s == "all":
+            return self.parse_spec("L,M,X,J,V")
+        if s in ("L", "M", "X", "J", "V"):
+            today = datetime.datetime.today()
+            if today.month==12:
+                next_month = datetime.date(today.year+1, 1, 1)
+            else:
+                next_month = datetime.date(today.year, today.month+1, 1)
+            out = []
+            for i in range(1, 32):
+                try:
+                    d = datetime.date(next_month.year, next_month.month, i)
+                    if (s[1] == "L" and d.weekday() == 0) or \
+                            (s[1] == "M" and d.weekday() == 1) or \
+                            (s[1] == "X" and d.weekday() == 2) or \
+                            (s[1] == "J" and d.weekday() == 3) or \
+                            (s[1] == "V" and d.weekday() == 4):
+                        out.append((True, d))
+                except:
+                    pass
+            return out
+        if s[0] == '!':
+            tkns = self.parse_token(s[1:])
+            return [(not tk[0], tk[1]) for tk in tkns]
+
 
     def update_pending(self,result):
         '''

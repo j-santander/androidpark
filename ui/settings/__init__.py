@@ -1,12 +1,13 @@
 from kivy.uix.button import Button
 from kivy.uix.widget import Widget
-from kivy.uix.settings import SettingItem,SettingSpacer
+from kivy.uix.settings import SettingItem,SettingSpacer,SettingNumeric
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
 from kivy.core.window import Window
 from kivy.metrics import dp
-from kivy.properties import ObjectProperty
+from kivy.properties import ObjectProperty,NumericProperty
+from kivy.compat import text_type
 
 import re
 
@@ -91,3 +92,22 @@ class SettingPassword(SettingItem):
         # all done, open the popup !
         popup.open()
 
+
+class SettingBoundedNumeric(SettingNumeric):
+    '''Implementation of a bounded numeric setting on top of a :class:`SettingNumeric`.
+    refer to :class:`SettingNumeric`
+    This class just adds a validation on top against a
+    '''
+    max = NumericProperty(0)
+    min = NumericProperty(0)
+
+    def _validate(self, instance):
+        super(SettingBoundedNumeric,self)._validate(instance)
+        if type(self.max) is float or type(self.min) is float:
+            value=float(self.value)
+        else:
+            value=int(self.value)
+        if value > self.max:
+            self.value = text_type(self.max)
+        if value < self.min:
+            self.value = text_type(self.min)

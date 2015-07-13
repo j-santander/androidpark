@@ -257,3 +257,4 @@ class ServerInterface:
             out[d.date] = d
         return out
 
+

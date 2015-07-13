@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 __version__ = '0.1'
 import kivy
 
@@ -5,7 +6,7 @@ kivy.require('1.0.5')
 
 from kivy.app import App
 
-from ui.settings import SettingPassword
+from ui.settings import SettingPassword,SettingBoundedNumeric
 
 from logic.query_thread import QueryThread,Refresh,Modify,Ping
 from Queue import Queue
@@ -49,6 +50,7 @@ class CalendarApp(App):
             {'username' : "",
              'password' : ""})
         config.setdefaults('network',{'host': "79.148.237.226"})
+        config.setdefaults('general',{'pattern':""})
         config.setdefaults('timers',
                            {'data_refresh': 5,
                            'frequency': 120,
@@ -77,6 +79,7 @@ class CalendarApp(App):
 
     def build_settings(self, settings):
         settings.register_type("password",SettingPassword)
+        settings.register_type("bounded_numeric",SettingBoundedNumeric)
         jsondata = """
         [
             { "type": "title",
@@ -94,32 +97,46 @@ class CalendarApp(App):
               "key": "password"
             },
             { "type": "string",
+              "title": "Patrón automático",
+              "desc": "Patrón (e.g. L,M,X,J,V) que se aplicará cuando se abre un mes",
+              "section": "general",
+              "key": "pattern"
+            },
+            { "type": "string",
               "title": "Host",
               "desc": "Web del parking",
               "section": "network",
               "key": "host"
             },
-            { "type": "numeric",
+            { "type": "bounded_numeric",
+              "min": 0,
+              "max": 1440,
               "title": "Refresco de datos",
-              "desc": "Tiempo en minutos entre consultas al servidor para refrescar los datos",
+              "desc": "Tiempo en minutos entre consultas al servidor para refrescar los datos [0-1440], 0 significa que no se refrescará",
               "section": "timers",
               "key": "data_refresh"
             },
-            { "type": "numeric",
+            { "type": "bounded_numeric",
               "title": "Reintentos",
-              "desc": "Tiempo en minutos entre reintentos de peticiones al servidor (00:00-14:59/17:30-23:59)",
+              "min": 0,
+              "max": 1440,
+              "desc": "Tiempo en minutos entre reintentos de peticiones al servidor (00:00-14:59/17:30-23:59) [0-1440], 0 significa que no se reintentará",
               "section": "timers",
               "key": "frequency"
             },
-            { "type": "numeric",
+            { "type": "bounded_numeric",
               "title": "Reintentos en la repesca",
-              "desc": "Tiempo en minutos entre reintentos de peticiones al servidor (15:00-17:30)",
+              "min": 0,
+              "max": 1440,
+              "desc": "Tiempo en minutos entre reintentos de peticiones al servidor (15:00-17:30) [0-1440], 0 significa que no se reintentará",
               "section": "timers",
               "key": "frequency2"
             },
-            { "type": "numeric",
+            { "type": "bounded_numeric",
               "title": "Temporizador de Servicio",
-              "desc": "Timeout en segundos de la comunicacion App y Service",
+              "min": 1,
+              "max": 60,
+              "desc": "Timeout en segundos de la comunicacion App y Service [1-60]",
               "section": "timers",
               "key": "timeout"
             }

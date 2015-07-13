@@ -118,7 +118,9 @@ class Calendar(FloatLayout):
 
         refresh=int(self.app.config.get("timers","data_refresh"))*60
 
-        if self.service_running and self.is_config_ready() and \
+        if refresh>0 and \
+                self.service_running and \
+                self.is_config_ready() and \
                (self.last_update is None or (now - self.last_update).total_seconds() > refresh):
             self.refresh_request()
 
