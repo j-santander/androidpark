@@ -94,14 +94,16 @@ class ServerThread:
                 if self.check_pattern():
                     self.add_pattern()
                 if self.check_interval():
-                    self.modify(-1)
+                    # Update last_time here to avoid repeated requests
+                    self.last_time = datetime.datetime.now(tz=self.met)
+                    self.internal_queue.put(lambda: self.modify(-1))
             sleep(.1)
 
     def ping(self,id):
         self.send_ping_result(id)
 
     def query(self,id):
-        L.debug("Calling query id: %s " % id)
+        L.info("Calling query id: %s " % id)
         try:
             result=self.server.query()
             self.update_pending(result)
@@ -110,7 +112,7 @@ class ServerThread:
             self.send_query_result(id,None,self.pending,e.status)
 
     def modify(self,id):
-        L.debug("Calling modify id:%s " % id)
+        L.info("Calling modify id:%s " % id)
         try:
             result=self.server.modify(self.pending,lambda (s):self.send_modify_partial_result(id,s))
             self.last_time = datetime.datetime.now(tz=self.met)
@@ -183,15 +185,18 @@ class ServerThread:
         if (self.t1 <= now.time() < self.t2) or (self.t3 <= now.time() < self.t4):
             # Period 00:00 - 14:59: attempt every 30 min
             if f1>0 and (self.last_time is None or (now - self.last_time).total_seconds() > f1):
+                L.info("modify on regular interval")
                 return True
         if (self.t2 <= now.time() < self.t3) and tomorrow in self.pending:
             # Period 15:00 - 17:30: attempt 1 min (but only if there's something pending for tomorrow
             if f2>0 and (self.last_time is None or (now - self.last_time).total_seconds() > f2):
+                L.info("modify on repesca interval")
                 return True
         if now.hour == 14 and now.minute > 50 and now.second > random.randange(0,60) \
             and (now - self.last_time).total_seconds > (10*60):
             # One final at 14:50 + random seconds
             # and only if we haven't requested  more than 10 minutes ago.
+            L.info("modify on Last call")
             return True
         return False
 
@@ -201,7 +206,7 @@ class ServerThread:
         L.debug("Using pattern %s, adding " % (pattern,str(dates_from_pattern)))
         self.pending.update({ t:DayStatus.TO_REQUEST for t in dates_from_pattern})
         if len(dates_from_pattern)>0:
-            self.modify(-1)
+            self.last_time = None # Force a modify.
 
     def parse_spec(self,text):
         # This is going to be a comma separated list of tokens:
