@@ -103,16 +103,28 @@ class ServerInterface:
         return state
 
     def modify(self, operations,partial):
-        if self.session is None:
-            self.login()
-
+        status = self.query()
         last_text=""
-
+        today = datetime.datetime.now(tz=self.met)
         for i in sorted(operations):
-            today = datetime.datetime.now(tz=self.met)
             if (i.month - today.month) not in (0, 1):
                 L.error(str(i) + " is neither current nor next month")
+                partial(str(i)+ " no es parte del mes actual o siguiente")
                 continue
+
+            if operations[i]==DayStatus.TO_REQUEST:
+                if i not in status or status[i].status in (DayStatus.RESERVED,\
+                                                           DayStatus.NOT_AVAILABLE,\
+                                                           DayStatus.REQUESTED,\
+                                                           DayStatus.BUSY):
+                    partial(str(i)+ " está ya solicitado")
+                    continue
+            if operations[i] in (DayStatus.TO_FREE,DayStatus.TO_UNREQUEST):
+                # Operation is to free/unrequest
+                if i not in status or status[i].status in (DayStatus.AVAILABLE,\
+                                                           DayStatus.NOT_AVAILABLE):
+                    partial(str(i)+ " está ya liberado")
+                    continue
             try:
                 L.debug("Requesting " + str(i) + ": " + self.map_operation(operations[i]))
                 r = self.session.post("http://" + self.host + "/perfil.php", data={
