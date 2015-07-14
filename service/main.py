@@ -260,9 +260,8 @@ class ServerThread:
         :return: None
         '''
         to_delete=[]
-        to_add=[ i for i in result if result[i].status == DayStatus.REQUESTED ]
 
-        L.debug("pending (before) "+str(self.pending))
+        L.info("pending (before) "+str(self.pending))
         for i in sorted(self.pending):
             today = datetime.datetime.now(tz=self.met)
             if (i.month - today.month) not in (0, 1):
@@ -287,10 +286,10 @@ class ServerThread:
         for i in to_delete:
             del self.pending[i]
 
-        for i in to_add:
+        for i in [i for i in result if result[i].status == DayStatus.REQUESTED ]:
             self.pending[i]=DayStatus.TO_REQUEST
 
-        L.debug("pending (after) "+str(self.pending))
+        L.info("pending (after) "+str(self.pending))
 
     def update_notification(self,text):
         L.info("Notification: "+text)

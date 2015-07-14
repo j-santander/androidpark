@@ -148,7 +148,12 @@ class ServerInterface:
             except (KeyboardInterrupt, requests.ConnectionError) as e:
                 L.debug("Petición fallida en " + self.host + ", con:\n" + traceback.format_exc())
 
-        return self.parse_months(last_text)
+        if last_text!="":
+            return self.parse_months(last_text)
+        else:
+            # We didn't send any operation, use the status retrieved
+            # when we entered the method.
+            return status
 
 
     def get_response_text(self,r):
@@ -210,6 +215,7 @@ class ServerInterface:
         toptables = soup.select("body > table ")
 
         if len(toptables) != 6:
+            L.error("Parsing: did not found 6 tables")
             return out
 
         tables = [toptables[4].tbody.tr.td.table, toptables[5].tbody.find_all('tr')[1].td.table]
@@ -259,6 +265,7 @@ class ServerInterface:
             result.append(month)
 
         if len(result) != 2:
+            L.error("Parsing: did not found 2 months")
             return out
         # Now rebuild the date
         today = datetime.datetime.now(tz=self.met)
@@ -267,6 +274,12 @@ class ServerInterface:
             out[d.date] = d
         for d in [x.fix(today + datetime.timedelta(days=31)) for x in result[1]]:
             out[d.date] = d
+
+        busy=len([x for x in out if out[x].status==DayStatus.BUSY])
+        requested=len([x for x in out if out[x].status==DayStatus.REQUESTED])
+        reserved=len([x for x in out if out[x].status==DayStatus.RESERVED])
+        available=len([x for x in out if out[x].status==DayStatus.AVAILABLE])
+        L.info("Parsed: %d busy,%d requested, %d reserved, %d available" % (busy,requested,reserved,available))
         return out
 
 

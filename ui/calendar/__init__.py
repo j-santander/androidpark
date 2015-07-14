@@ -154,11 +154,18 @@ class Calendar(FloatLayout):
             elif d.day.status == DayStatus.REQUESTED:
                 # unrequest
                 operations[d.day.date] = DayStatus.TO_UNREQUEST
-        free_count = len([x for x in operations if operations[x] == 1])
-        unrequest_count = len([x for x in operations if operations[x] == 3])
-        request_count = len([x for x in operations if operations[x] == 2])
-        self.confirm.text = "Se liberarán %d plazas, se quitará la solicitud para %d plazas y se solicitarán %d nuevas plazas" \
-                            % (free_count, unrequest_count, request_count)
+        free_count = len([x for x in operations if operations[x] == DayStatus.TO_FREE])
+        unrequest_count = len([x for x in operations if operations[x] == DayStatus.TO_UNREQUEST])
+        request_count = len([x for x in operations if operations[x] == DayStatus.TO_REQUEST])
+
+        # Now add to the operations those days that are already requested.
+        requested_days = self.get_days_requested()
+        for d in requested_days:
+            operations[d.day.date] = DayStatus.TO_REQUEST
+        total_request_count = len([x for x in operations if operations[x] == DayStatus.TO_REQUEST])
+
+        self.confirm.text = "Se liberarán {0:d} plazas, se quitará la solicitud para {1:d} plazas y se solicitarán {2:d} nuevas plazas. {3:d} plazas están solicitadas" \
+            .format(free_count, unrequest_count, request_count, total_request_count - request_count)
         self.confirm.on_accept=lambda: self.modify_request(operations)
         self.confirm.open()
 
@@ -207,5 +214,9 @@ class Calendar(FloatLayout):
 
     def get_days_with_change(self):
         return filter(lambda x: x.needs_change(),
+                      self.current_month.get_monthdays() +
+                      self.next_month.get_monthdays())
+    def get_days_requested(self):
+        return filter(lambda x: (x.day.status == DayStatus.REQUESTED) and (x.band is None),
                       self.current_month.get_monthdays() +
                       self.next_month.get_monthdays())
