@@ -42,6 +42,7 @@ class ServerThread:
         self.server = None
         self.pending = {}
         self.last_time = None
+        self.notified = True
         self.config = None
         # Initialize timezones
         self.met=pytz.timezone('Europe/Madrid')
@@ -85,6 +86,9 @@ class ServerThread:
     def run(self):
         while True:
             osc.readQueue(self.oscid)
+            if not self.notified:
+                self.update_notification("Intento: "+self.last_time.strftime('%Y-%m-%d %H:%M'))
+                self.notified=True
             if len(self.pending) > 0:
                 # Pending operations
                 if self.check_pattern():
@@ -110,7 +114,7 @@ class ServerThread:
         try:
             result=self.server.modify(self.pending,lambda (s):self.send_modify_partial_result(id,s))
             self.last_time = datetime.datetime.now(tz=self.met)
-            self.update_notification("Intento: "+self.last_time.strftime('%Y-%m-%d %H:%M'))
+            self.notified = False
             self.update_pending(result)
             self.send_modify_result(id,"OK")
         except ServerException as e:
