@@ -39,7 +39,7 @@ class ServerThread:
         osc.init()
         self.oscid = osc.listen(ipAddr='127.0.0.1', port=3333)
         osc.bind(self.oscid, self.handle_message, '/android_park')
-        self.server = None
+        self.server = ServerInterface()
         self.pending = {}
         self.last_time = None
         self.notified = True
@@ -61,13 +61,28 @@ class ServerThread:
             except Exception as e:
                 L.error("Exception:\n"+traceback.format_exc())
 
+    def run(self):
+        while True:
+            try:
+                osc.readQueue(self.oscid)
+                if not self.notified:
+                    self.update_notification("Intento: "+self.last_time.strftime('%Y-%m-%d %H:%M'))
+                    self.notified=True
+                if self.check_pattern():
+                    self.add_pattern()
+                # Pending operations
+                if self.check_interval():
+                    # Update last_time here to avoid repeated requests
+                    self.last_time = datetime.datetime.now(tz=self.met)
+                    self.internal_queue.put(lambda: self.modify(-1))
+            except:
+                L.error("Exception:\n"+traceback.format_exc())
+            sleep(.1)
+
     def handle_message(self, message, *args):
         pickle_msg = message[2]
         msg = pickle.loads(pickle_msg)
         L.debug("Received message %s" % msg['request'])
-
-        if self.server is None:
-            self.server = ServerInterface()
 
         self.config = msg['config']
         self.server.config(self.config)
@@ -83,21 +98,7 @@ class ServerThread:
 
         L.debug("End Received message %s" % msg['request'])
 
-    def run(self):
-        while True:
-            osc.readQueue(self.oscid)
-            if not self.notified:
-                self.update_notification("Intento: "+self.last_time.strftime('%Y-%m-%d %H:%M'))
-                self.notified=True
-            if len(self.pending) > 0:
-                # Pending operations
-                if self.check_pattern():
-                    self.add_pattern()
-                if self.check_interval():
-                    # Update last_time here to avoid repeated requests
-                    self.last_time = datetime.datetime.now(tz=self.met)
-                    self.internal_queue.put(lambda: self.modify(-1))
-            sleep(.1)
+
 
     def ping(self,id):
         self.send_ping_result(id)
@@ -160,13 +161,20 @@ class ServerThread:
     def check_pattern(self):
         random.seed()
         now=datetime.datetime.now(tz=self.met)
-        pattern = self.config.get("general","pattern")
+        pattern = ""
+        if self.config is not None:
+            pattern = self.config.get("general","pattern")
+
         next_month=(now.month+1)
         if next_month==13:
             next_month=1
         pending_for_next_month=[i for i in self.pending if i.month==next_month]
         random_minute=random.randrange(0,60)
-        if pattern != "" and now.day == 1 and now.hour > 11 and now.minute > random_minute and len(pending_for_next_month)==0:
+        if pattern != "" and \
+                now.day == 1 and \
+                now.hour >= 11 and \
+                now.minute >= random_minute and \
+                len(pending_for_next_month)==0:
             # Add the pattern the first day of the month, at the 11:XXam, and
             # only if there's nothing pending for next month.
             return True
@@ -180,20 +188,26 @@ class ServerThread:
         '''
         now=datetime.datetime.now(tz=self.met)
         tomorrow = now.date() + datetime.timedelta(days=1)
-        f1 = int(self.config.get("timers","frequency"))*60
-        f2 = int(self.config.get("timers","frequency2"))*60
-        if (self.t1 <= now.time() < self.t2) or (self.t3 <= now.time() < self.t4):
+        f1 = 0
+        f2 = 0
+        if self.config is not None:
+            f1 = int(self.config.get("timers","frequency"))*60
+            f2 = int(self.config.get("timers","frequency2"))*60
+        if len(self.pending)>0 and \
+                ((self.t1 <= now.time() < self.t2) or (self.t3 <= now.time() < self.t4)):
             # Period 00:00 - 14:59: attempt every 30 min
-            if f1>0 and (self.last_time is None or (now - self.last_time).total_seconds() > f1):
+            if self.last_time is None or (0 < f1 < (now - self.last_time).total_seconds()):
                 L.info("modify on regular interval")
                 return True
         if (self.t2 <= now.time() < self.t3) and tomorrow in self.pending:
             # Period 15:00 - 17:30: attempt 1 min (but only if there's something pending for tomorrow
-            if f2>0 and (self.last_time is None or (now - self.last_time).total_seconds() > f2):
+            if self.last_time is None or (0 < f2 < (now - self.last_time).total_seconds()):
                 L.info("modify on repesca interval")
                 return True
-        if now.hour == 14 and now.minute > 50 and now.second > random.randrange(0,60) \
-            and (now - self.last_time).total_seconds > (10*60):
+        if len(self.pending)>0 and  \
+                now.hour == 14 and now.minute > 50 and \
+                now.second > random.randrange(0,60) and \
+                ((self.last_time is None) or ((now - self.last_time).total_seconds() > (10*60))):
             # One final at 14:50 + random seconds
             # and only if we haven't requested  more than 10 minutes ago.
             L.info("modify on Last call")
@@ -201,9 +215,11 @@ class ServerThread:
         return False
 
     def add_pattern(self):
-        pattern = self.config.get("general","pattern")
+        pattern =""
+        if self.config is not None:
+            pattern = self.config.get("general","pattern")
         dates_from_pattern = [t[1] for t in self.parse_spec(pattern) if t[0]]
-        L.debug("Using pattern %s, adding " % (pattern,str(dates_from_pattern)))
+        L.debug("Using pattern %s, adding %s" % (pattern,str(dates_from_pattern)))
         self.pending.update({ t:DayStatus.TO_REQUEST for t in dates_from_pattern})
         if len(dates_from_pattern)>0:
             self.last_time = None # Force a modify.
@@ -244,11 +260,11 @@ class ServerThread:
             for i in range(1, 32):
                 try:
                     d = datetime.date(next_month.year, next_month.month, i)
-                    if (s[1] == "L" and d.weekday() == 0) or \
-                            (s[1] == "M" and d.weekday() == 1) or \
-                            (s[1] == "X" and d.weekday() == 2) or \
-                            (s[1] == "J" and d.weekday() == 3) or \
-                            (s[1] == "V" and d.weekday() == 4):
+                    if (s[0] == "L" and d.weekday() == 0) or \
+                            (s[0] == "M" and d.weekday() == 1) or \
+                            (s[0] == "X" and d.weekday() == 2) or \
+                            (s[0] == "J" and d.weekday() == 3) or \
+                            (s[0] == "V" and d.weekday() == 4):
                         out.append((True, d))
                 except:
                     pass
