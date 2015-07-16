@@ -246,13 +246,9 @@ class ServerThread:
     def parse_spec(self, text):
         # This is going to be a comma separated list of tokens:
         # - token: <weekday>|<date>
-        # - neg: !<token>
-        # - all: all=L,M,X,J,V
+        # - todo: todo=L,M,X,J,V
         # - weekday: <raw>
-        # - raw: L,M,X,J,V (L=cL,nL)
-        # - current: c<raw>
-        # - next: n<raw>
-        # - date: [[YYYY-]MM-]DD
+        # - raw: L,M,X,J,V
 
         specs = text.split(',')
         result = []
@@ -267,7 +263,7 @@ class ServerThread:
         s = s.strip()
         if len(s) == 0:
             return None
-        if s == "all":
+        if s == "todo":
             return self.parse_spec("L,M,X,J,V")
         if s in ("L", "M", "X", "J", "V"):
             today = datetime.datetime.today()
