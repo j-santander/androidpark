@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+
 # Android Park
 # Copyright (C) 2015  Julian Santander
 #
@@ -13,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# -*- encoding: utf-8 -*-
 
 from logic.daystatus import DayStatus
 from logic import L
@@ -24,20 +25,24 @@ import datetime
 import bs4
 import pytz
 
+
 class ServerException(Exception):
     def __init__(self, status):
         self.status = status
+
 
 class ServerInterface:
     def __init__(self):
         self.session = None
         self.met = pytz.timezone('Europe/Madrid')
+        self.host = None
+        self.username = None
+        self.password = None
 
-
-    def config(self,appconfig):
-        self.host = appconfig.get('network','host')
-        self.username = appconfig.get('credentials','username')
-        self.password = appconfig.get('credentials','password')
+    def config(self, appconfig):
+        self.host = appconfig.get('network', 'host')
+        self.username = appconfig.get('credentials', 'username')
+        self.password = appconfig.get('credentials', 'password')
 
     def login(self):
         L.debug("Starting login")
@@ -46,10 +51,10 @@ class ServerInterface:
         #
         self.session = requests.Session()
 
-        #self.session.proxies= {
+        # self.session.proxies= {
         #    "http": "http://es.proxy.lucent.com:8000",
         #    "https": "http://es.proxy.lucent.com:8000",
-        #}
+        # }
 
         #
         # Prepare the login request
@@ -72,16 +77,15 @@ class ServerInterface:
         #
         L.debug("Parsing query result")
 
-        state=self.parse_months(self.get_response_text(r))
+        state = self.parse_months(self.get_response_text(r))
 
         if state is None:
-            raise ServerException("Problema consultando con el servidor, es probable que el usuario/contraseña sean incorrectos")
+            raise ServerException(
+                "Problema consultando con el servidor, es probable que el usuario/contraseña sean incorrectos")
         return state
 
     def query(self):
         L.debug("Starting query")
-
-        state=None
 
         if self.session is None:
             #
@@ -110,7 +114,7 @@ class ServerInterface:
                 self.session = None
                 return self.query()
 
-        except (KeyboardInterrupt, requests.ConnectionError, ServerException) as e:
+        except (KeyboardInterrupt, requests.ConnectionError, ServerException):
             L.error(traceback.format_exc())
             # try to login again
             self.session = None
@@ -118,28 +122,28 @@ class ServerInterface:
 
         return state
 
-    def modify(self, operations,partial):
+    def modify(self, operations, partial):
         status = self.query()
-        last_text=""
+        last_text = ""
         today = datetime.datetime.now(tz=self.met)
         for i in sorted(operations):
             if (i.month - today.month) not in (0, 1):
                 L.error(str(i) + " is neither current nor next month")
-                partial(str(i)+ " no es parte del mes actual o siguiente")
+                partial(str(i) + " no es parte del mes actual o siguiente")
                 continue
 
-            if operations[i]==DayStatus.TO_REQUEST:
-                if i not in status or status[i].status in (DayStatus.RESERVED,\
-                                                           DayStatus.NOT_AVAILABLE,\
-                                                           DayStatus.REQUESTED,\
+            if operations[i] == DayStatus.TO_REQUEST:
+                if i not in status or status[i].status in (DayStatus.RESERVED,
+                                                           DayStatus.NOT_AVAILABLE,
+                                                           DayStatus.REQUESTED,
                                                            DayStatus.BUSY):
-                    partial(str(i)+ " está ya solicitado")
+                    partial(str(i) + " está ya solicitado")
                     continue
-            if operations[i] in (DayStatus.TO_FREE,DayStatus.TO_UNREQUEST):
+            if operations[i] in (DayStatus.TO_FREE, DayStatus.TO_UNREQUEST):
                 # Operation is to free/unrequest
-                if i not in status or status[i].status in (DayStatus.AVAILABLE,\
+                if i not in status or status[i].status in (DayStatus.AVAILABLE,
                                                            DayStatus.NOT_AVAILABLE):
-                    partial(str(i)+ " está ya liberado")
+                    partial(str(i) + " está ya liberado")
                     continue
             try:
                 L.debug("Requesting " + str(i) + ": " + self.map_operation(operations[i]))
@@ -151,28 +155,27 @@ class ServerInterface:
 
                 if r.status_code != requests.codes.ok:
                     L.error("Failed request on " + self.host + ", response:" + r)
-                    partial(str(i)+"`: Failed request on server response:" + r)
+                    partial(str(i) + "`: Failed request on server response:" + r)
                     continue
 
                 # Parse the web page to obtain the result message
-                last_text=self.get_response_text(r)
-                result=self.parse_result(last_text)
-                if result=="":
-                    result='La modificación de '+str(i)+' no fue aceptada'
+                last_text = self.get_response_text(r)
+                result = self.parse_result(last_text)
+                if result == "":
+                    result = 'La modificación de ' + str(i) + ' no fue aceptada'
                 partial(result)
-                L.info(str(i)+": "+result)
-            except (KeyboardInterrupt, requests.ConnectionError) as e:
+                L.info(str(i) + ": " + result)
+            except (KeyboardInterrupt, requests.ConnectionError):
                 L.debug("Petición fallida en " + self.host + ", con:\n" + traceback.format_exc())
 
-        if last_text!="":
+        if last_text != "":
             return self.parse_months(last_text)
         else:
             # We didn't send any operation, use the status retrieved
             # when we entered the method.
             return status
 
-
-    def get_response_text(self,r):
+    def get_response_text(self, r):
         return r.text
 
     def map_operation(self, o):
@@ -207,7 +210,7 @@ class ServerInterface:
             t = t.parent
         return t
 
-    def parse_result(self,text):
+    def parse_result(self, text):
         soup = bs4.BeautifulSoup(text, "html5lib")
         spans = soup.select("span")
         for s in spans:
@@ -291,11 +294,9 @@ class ServerInterface:
         for d in [x.fix(today + datetime.timedelta(days=31)) for x in result[1]]:
             out[d.date] = d
 
-        busy=len([x for x in out if out[x].status==DayStatus.BUSY])
-        requested=len([x for x in out if out[x].status==DayStatus.REQUESTED])
-        reserved=len([x for x in out if out[x].status==DayStatus.RESERVED])
-        available=len([x for x in out if out[x].status==DayStatus.AVAILABLE])
-        L.info("Parsed: %d busy,%d requested, %d reserved, %d available" % (busy,requested,reserved,available))
+        busy = len([x for x in out if out[x].status == DayStatus.BUSY])
+        requested = len([x for x in out if out[x].status == DayStatus.REQUESTED])
+        reserved = len([x for x in out if out[x].status == DayStatus.RESERVED])
+        available = len([x for x in out if out[x].status == DayStatus.AVAILABLE])
+        L.info("Parsed: %d busy,%d requested, %d reserved, %d available" % (busy, requested, reserved, available))
         return out
-
-

@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+
 # Android Park
 # Copyright (C) 2015  Julian Santander
 #
@@ -13,26 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# -*- encoding: utf-8 -*-
-import threading
 
-from Queue import Queue, Empty
-from logic import L
+import threading
+from Queue import Empty
 from kivy.lib import osc
 from kivy.app import App
-
 import pickle
 import datetime
 from time import sleep
 
+from logic import L
+
 
 class Request(object):
     def __init__(self):
-        self.id=None
-        self.endtime=None
+        self.id = None
+        self.endtime = None
         pass
 
-    def call(self,queue):
+    def call(self, queue):
         pass
 
     def callback(self, msg):
@@ -42,7 +43,7 @@ class Request(object):
         pass
 
     def get_timer(self):
-        return int(App.get_running_app().config.get('timers','timeout'))
+        return int(App.get_running_app().config.get('timers', 'timeout'))
 
 
 class Ping(Request):
@@ -54,10 +55,10 @@ class Ping(Request):
         queue.send_ping(self)
 
     def callback(self, msg):
-        self.calendar.ping_callback(True,msg['config'])
+        self.calendar.ping_callback(True, msg['config'])
 
     def timedout(self):
-        self.calendar.ping_callback(False,None)
+        self.calendar.ping_callback(False, None)
 
     def get_timer(self):
         return 2
@@ -73,10 +74,10 @@ class Refresh(Request):
 
     def callback(self, msg):
         L.debug("Got a response %s for %d" % (msg['response'], msg['id']))
-        self.calendar.refresh_callback(msg['result'],msg['pending'],msg['status'])
+        self.calendar.refresh_callback(msg['result'], msg['pending'], msg['status'])
 
     def timedout(self):
-        self.calendar.refresh_callback(None, None,'Sin respuesta del servidor')
+        self.calendar.refresh_callback(None, None, 'Sin respuesta del servidor')
 
 
 class Modify(Request):
@@ -92,10 +93,9 @@ class Modify(Request):
         L.debug("Got a response %s for %d" % (msg['response'], msg['id']))
         self.calendar.modify_callback()
 
-    def callback_partial(self,msg):
+    def callback_partial(self, msg):
         L.debug("Got a partial response %s for %d" % (msg['response'], msg['id']))
         self.calendar.modify_partial_callback(msg['status'])
-
 
     def timedout(self):
         pass
@@ -151,10 +151,10 @@ class QueryThread:
 
         if 'response' in msg:
             if 'is_partial' in msg and msg['is_partial']:
-                keep=True
+                keep = True
             else:
-                keep=False
-            req = self.get_id(msg['id'],keep)
+                keep = False
+            req = self.get_id(msg['id'], keep)
             if req is not None:
                 if keep:
                     req.callback_partial(msg)
@@ -189,23 +189,23 @@ class QueryThread:
         osc.sendMsg('/android_park', [pickle_msg, ], port=3333)
 
     def save_id(self, request):
-        id = self.next_id
-        self.pending[id] = request
+        _id = self.next_id
+        self.pending[_id] = request
         self.next_id += 1
         now = datetime.datetime.now()
         timeout = request.get_timer()
         request.endtime = now + datetime.timedelta(seconds=timeout)
-        request.id = id
-        return id
+        request.id = _id
+        return _id
 
     def get_config(self):
         return App.get_running_app().config
 
-    def get_id(self, id,keep=False):
-        if id in self.pending:
-            request = self.pending[id]
+    def get_id(self, _id, keep=False):
+        if _id in self.pending:
+            request = self.pending[_id]
             if not keep:
-                del self.pending[id]
+                del self.pending[_id]
             else:
                 # refresh the timer.
                 now = datetime.datetime.now()
@@ -216,7 +216,7 @@ class QueryThread:
 
     def check_timeout(self):
         now = datetime.datetime.now()
-        timedout_id = [id for id in self.pending if self.pending[id].endtime < now]
-        timedout = [self.get_id(id) for id in timedout_id]
-        map(lambda (x): L.error("Time out on %d" % x.id),timedout)
+        timedout_id = [_id for _id in self.pending if self.pending[_id].endtime < now]
+        timedout = [self.get_id(_id) for _id in timedout_id]
+        map(lambda (x): L.error("Time out on %d" % x.id), timedout)
         map(lambda (x): x.timedout(), timedout)

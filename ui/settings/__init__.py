@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+
 # Android Park
 # Copyright (C) 2015  Julian Santander
 #
@@ -13,30 +15,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# -*- encoding: utf-8 -*-
+
 
 from kivy.uix.button import Button
 from kivy.uix.widget import Widget
-from kivy.uix.settings import SettingItem,SettingSpacer,SettingNumeric
+from kivy.uix.settings import SettingItem, SettingSpacer, SettingNumeric
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
 from kivy.core.window import Window
 from kivy.metrics import dp
-from kivy.properties import ObjectProperty,NumericProperty
+from kivy.properties import ObjectProperty, NumericProperty
 from kivy.compat import text_type
 
 import re
 
+
 class SettingPassword(SettingItem):
-    '''Implementation of a password setting on top of a :class:`SettingItem`.
+    """Implementation of a password setting on top of a :class:`SettingItem`.
     It is visualized with a :class:`~kivy.uix.label.Label` widget that, when
     clicked, will open a :class:`~kivy.uix.popup.Popup` with a
     :class:`~kivy.uix.textinput.Textinput` so the user can enter a custom
     value.
 
     Heavily based on SettingString
-    '''
+    """
 
     popup = ObjectProperty(None, allownone=True)
     '''(internal) Used to store the current popup when it's shown.
@@ -53,10 +56,10 @@ class SettingPassword(SettingItem):
     defaults to None.
     '''
 
-    def mask(self,val):
+    def mask(self, val):
         if not val:
             return val
-        return re.sub('.','*',val)
+        return re.sub('.', '*', val)
 
     def on_panel(self, instance, value):
         if value is None:
@@ -86,7 +89,7 @@ class SettingPassword(SettingItem):
         # create the textinput used for numeric input
         self.textinput = textinput = TextInput(
             text=self.value, font_size='24sp', multiline=False,
-            size_hint_y=None, height='42sp', password =True)
+            size_hint_y=None, height='42sp', password=True)
         textinput.bind(on_text_validate=self._validate)
         self.textinput = textinput
 
@@ -111,19 +114,19 @@ class SettingPassword(SettingItem):
 
 
 class SettingBoundedNumeric(SettingNumeric):
-    '''Implementation of a bounded numeric setting on top of a :class:`SettingNumeric`.
+    """Implementation of a bounded numeric setting on top of a :class:`SettingNumeric`.
     refer to :class:`SettingNumeric`
     This class just adds a validation on top against a
-    '''
+    """
     max = NumericProperty(0)
     min = NumericProperty(0)
 
     def _validate(self, instance):
-        super(SettingBoundedNumeric,self)._validate(instance)
+        super(SettingBoundedNumeric, self)._validate(instance)
         if type(self.max) is float or type(self.min) is float:
-            value=float(self.value)
+            value = float(self.value)
         else:
-            value=int(self.value)
+            value = int(self.value)
         if value > self.max:
             self.value = text_type(self.max)
         if value < self.min:

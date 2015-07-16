@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+
 # Android Park
 # Copyright (C) 2015  Julian Santander
 #
@@ -13,13 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# -*- encoding: utf-8 -*-
+
 
 from kivy.logger import Logger
 import threading
 
+
 class L:
-    COMPONENT="App"
+    COMPONENT = "App"
+
+    def __init__(self):
+        pass
 
     @staticmethod
     def info(s):
@@ -44,10 +50,10 @@ class L:
 
     @staticmethod
     def __format(s):
-        t=threading.current_thread()
+        t = threading.current_thread()
         if type(s) is str:
-            return L.COMPONENT+"_"+t.name+": "+s.decode('ascii','replace').encode('ascii','replace')
+            return L.COMPONENT + "_" + t.name + ": " + s.decode('ascii', 'replace').encode('ascii', 'replace')
         if type(s) is unicode:
-            return L.COMPONENT+"_"+t.name+": "+s.encode('ascii','replace')
+            return L.COMPONENT + "_" + t.name + ": " + s.encode('ascii', 'replace')
         else:
-            return L.COMPONENT+"_"+t.name+": "+str(s)
+            return L.COMPONENT + "_" + t.name + ": " + str(s)

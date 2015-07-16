@@ -93,7 +93,7 @@ class Day(BoxLayout):
             Color(rgba=color.rgba)
             self.band = Line(points=(self.x, self.y + self.height * 2. / 3,
                                      self.x + self.width * 1. / 3, self.y + self.height),
-                             width=self._calculate_band_width(), color=color)
+                             width=self._calculate_band_width())
             StencilPop()
 
     def _calculate_band_width(self):
