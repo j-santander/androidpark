@@ -10,7 +10,7 @@ ni con Alcatel-Lucent España. Únicamente hace uso del interfaz web ofrecido a 
 de parking
 
 # Instalación
-1. Utilizar el navegador del móvil para descarga el archivo APK.
+1. Utilizar el navegador del móvil para [descarga el archivo APK](https://github.com/j-santander/androidpark/releases/latest)
 2. Abrir la carpeta de descargas del móvil y hacer click en el archivo descargado.
 3. Permitir la instalación de aplicaciones desde orígenes desconocidos (temporalmente, una vez instalada se puede volver 
 a la configuración de fábrica)
@@ -24,7 +24,12 @@ está funcionando un icono de ALU aparecerá en el área de notificación del te
     * El Servicio mantiene información (dinámica) de las peticiones realizadas, de forma que es capaz de periódicamente 
     de reactivar las peticiones (cuando la web las borra). La frecuencia de reactivación es cada 2 horas (por defecto) y 
     cada 5 minutos en el periodo de repesca (15:00-17:30) (pero sólo si hay una petición para el día siguiente)-
-2. La *Aplicación*. Se lanza con el icono de la aplicación o pulsando en la notificación cuando el Servicio está activo. 
+    * También hay un intento de reactivación (*last-call*) a las 14:50
+    * Si el usuario ha configurado un *patrón de reserva*, el día 1 del mes, a las 11:00 se añadirán peticiones para el
+    mes siguiente conforme al patrón. El tendrá la forma una lista separada por comas de *tokens*, siendo los tokens:
+    ``todo`` (seleccionará todos los días del mes), ``L|M|X|J|V`` (seleccionará respectivamente todos los *Lunes*, 
+    *Martes*, *Miércoles*, *Jueves* o *Viernes*)
+2. La *Aplicación*. Se lanza con el icono de la aplicación o pulsando en la notificación cuando el Servicio está activo.
 La Aplicación permite visualizar las plazas asignadas y realizar nuevas peticiones:
     * Los controles son:
         * Click en un día: Marca el día para que se solicite su cambio (para liberar/no-solicitar/solicitar). La marca se 
@@ -35,10 +40,14 @@ La Aplicación permite visualizar las plazas asignadas y realizar nuevas peticio
           * el nombre de usuario
           * la contraseña
           * dirección del servidor web.
-          * Frecuencia de refresco de datos en la aplicación (defecto 5 min)
-          * Frecuencia de reactivación de solicitudes desde el servidor (defecto 2 horas)
-          * Frecuencia de reactivación de solicitudes durante el periodo de respeca desde el servidor (defecto 5 min)
-          * Temporizador en la comunicación entre el Servicio y la Aplicación (defecto 15 segundos)
+          * El patrón de reserva (e.g. ``"L,X,J,V"``)
+          * Frecuencia de refresco de datos en la aplicación (defecto 5 min) [0-1440]. El valor ``0`` indica que el 
+          refresco estará desactivado.
+          * Frecuencia de reactivación de solicitudes desde el servidor (defecto 2 horas) [0-1440]. El valor ``0`` 
+          indica que la reactivación estará desactivada.
+          * Frecuencia de reactivación de solicitudes durante el periodo de respeca desde el servidor (defecto 5 min) 
+          [0-1440]. El valor ``0`` indica que la reactivación en repesca estará desactivada.
+          * Temporizador en la comunicación entre el Servicio y la Aplicación (defecto 15 segundos) [1-60]
         * Botón de Envío de solicitudes: Envía los días marcados como solicitudes al servicio. El Servicio reemplazará 
         las solicitudes anteriores con estas nuevas y tratará de enviarlas al servidor. Cuando concluya este primer
         intento (nota: puede tardar un tiempo para un número elevado de solicitudes), se refrescará automáticamente

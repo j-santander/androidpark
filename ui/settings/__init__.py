@@ -1,3 +1,20 @@
+# Android Park
+# Copyright (C) 2015  Julian Santander
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License v2 as published by
+# the Free Software Foundation
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# -*- encoding: utf-8 -*-
+
 from kivy.uix.button import Button
 from kivy.uix.widget import Widget
 from kivy.uix.settings import SettingItem,SettingSpacer,SettingNumeric
