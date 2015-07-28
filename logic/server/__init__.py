@@ -235,7 +235,7 @@ class ServerInterface:
 
         if len(toptables) != 6:
             L.error("Parsing: did not found 6 tables")
-            return out
+            return None
 
         tables = [toptables[4].tbody.tr.td.table, toptables[5].tbody.find_all('tr')[1].td.table]
 
@@ -285,7 +285,7 @@ class ServerInterface:
 
         if len(result) != 2:
             L.error("Parsing: did not found 2 months")
-            return out
+            return None
         # Now rebuild the date
         today = datetime.datetime.now(tz=self.met)
         today = datetime.date(today.year, today.month, 1)
