@@ -65,6 +65,8 @@ class ServerThread:
         self.last_time = None
         self.notified = True
         self.config = None
+        # set to indicate that a month has been processed by the pattern
+        self.pattern_processed=set()
         # Initialize timezones
         self.met = pytz.timezone('Europe/Madrid')
         self.t1 = datetime.time(hour=0, minute=0, second=0, tzinfo=self.met)  # 00:00
@@ -187,15 +189,19 @@ class ServerThread:
         next_month = (now.month + 1)
         if next_month == 13:
             next_month = 1
-        pending_for_next_month = [i for i in self.pending if i.month == next_month]
+
         random_minute = random.randrange(0, 60)
         if pattern != "" and \
            now.day == 1 and \
-           now.hour >= 11 and \
-           now.minute >= random_minute and \
-           len(pending_for_next_month) == 0:
+                ((now.hour == 11 and now.minute >= random_minute) or (now.hour > 11)) and \
+           next_month not in self.pattern_processed:
             # Add the pattern the first day of the month, at the 11:XXam, and
             # only if there's nothing pending for next month.
+            self.pattern_processed.add(next_month)
+            if next_month==1:
+                self.pattern_processed.discard(12)
+            else:
+                self.pattern_processed.discard(next_month-1)
             return True
         else:
             return False
