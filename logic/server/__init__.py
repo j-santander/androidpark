@@ -237,7 +237,7 @@ class ServerInterface:
             L.error("Parsing: did not found 6 tables")
             return None
 
-        tables = [toptables[4].tbody.tr.td.table, toptables[5].tbody.find_all('tr')[1].td.table]
+        tables = [toptables[4].tbody.tr.td.table, toptables[5].tbody.contents[1].td.table]
 
         # Now, for each table.
         for t in tables:
