@@ -181,11 +181,11 @@ class ServerThread:
 
     def check_pattern(self):
         random.seed()
-        now = datetime.datetime.now(tz=self.met)
         pattern = ""
         if self.config is not None:
             pattern = self.config.get("general", "pattern")
 
+        now = datetime.datetime.now(tz=self.met)
         next_month = (now.month + 1)
         if next_month == 13:
             next_month = 1
@@ -197,14 +197,18 @@ class ServerThread:
            next_month not in self.pattern_processed:
             # Add the pattern the first day of the month, at the 11:XXam, and
             # only if there's nothing pending for next month.
-            self.pattern_processed.add(next_month)
-            if next_month==1:
-                self.pattern_processed.discard(12)
-            else:
-                self.pattern_processed.discard(next_month-1)
+            self.mark_next_month_as_processed(next_month)
             return True
         else:
             return False
+
+    def mark_next_month_as_processed(self,next_month):
+        self.pattern_processed.add(next_month)
+        if next_month==1:
+            self.pattern_processed.discard(12)
+        else:
+            self.pattern_processed.discard(next_month-1)
+
 
     def check_interval(self):
         """
@@ -294,15 +298,27 @@ class ServerThread:
             tkns = self.parse_token(s[1:])
             return [(not tk[0], tk[1]) for tk in tkns]
 
+    def check_next_month(self,result):
+        now = datetime.datetime.now(tz=self.met)
+        next_month = (now.month + 1)
+        if next_month == 13:
+            next_month = 1
+        days_of_next_month = [ day for day in result if day.month == next_month and result[day].status in (DayStatus.RESERVED,DayStatus.REQUESTED)]
+        if len(days_of_next_month) > 0:
+            self.mark_next_month_as_processed(next_month)
+
+
     def update_pending(self, result):
         """
         Update the pending operations with the result retrieved from the web.
         :param result:
         :return: None
         """
+        self.check_next_month(result)
         to_delete = []
 
         L.info("pending (before) " + str(self.pending))
+
         for i in sorted(self.pending):
             today = datetime.datetime.now(tz=self.met)
             if (i.month - today.month) not in (0, 1):

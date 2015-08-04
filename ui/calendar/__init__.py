@@ -115,7 +115,7 @@ class Calendar(FloatLayout):
         self.last_update = datetime.datetime.now()
         self.querying.open()
         self.status_bar.text = "Consultando al servidor del parking..."
-        self.app.do_refresh(self)
+        self.app.do_refresh()
 
     def update_info(self, state, pending, status=None):
         self.status_bar.text = ""
@@ -158,7 +158,7 @@ class Calendar(FloatLayout):
             self.refresh_request()
 
     def ping_request(self):
-        self.app.do_ping(self)
+        self.app.do_ping()
 
     def ping_callback(self, value, config):
         if self.service_running != value:
@@ -205,7 +205,7 @@ class Calendar(FloatLayout):
 
     def modify_request(self, operations):
         self.status_bar.text = "Enviando petición al servidor del parking..."
-        self.app.do_modify(self, operations)
+        self.app.do_modify(operations)
 
     def modify_callback(self):
         # Make the last_update None to force a refresh

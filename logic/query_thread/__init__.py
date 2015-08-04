@@ -31,6 +31,7 @@ class Request(object):
     def __init__(self):
         self.id = None
         self.endtime = None
+        self.calendar = App.get_running_app().root
         pass
 
     def call(self, queue):
@@ -47,55 +48,58 @@ class Request(object):
 
 
 class Ping(Request):
-    def __init__(self, calendar):
+    def __init__(self):
         super(Ping, self).__init__()
-        self.calendar = calendar
 
     def call(self, queue):
         queue.send_ping(self)
 
     def callback(self, msg):
-        self.calendar.ping_callback(True, msg['config'])
+        if self.calendar is not None:
+            self.calendar.ping_callback(True, msg['config'])
 
     def timedout(self):
-        self.calendar.ping_callback(False, None)
+        if self.calendar is not None:
+            self.calendar.ping_callback(False, None)
 
     def get_timer(self):
         return 2
 
 
 class Refresh(Request):
-    def __init__(self, calendar):
+    def __init__(self):
         super(Refresh, self).__init__()
-        self.calendar = calendar
 
     def call(self, queue):
         queue.send_refresh(self)
 
     def callback(self, msg):
-        L.debug("Got a response %s for %d" % (msg['response'], msg['id']))
-        self.calendar.refresh_callback(msg['result'], msg['pending'], msg['status'])
+        if self.calendar is not None:
+            L.debug("Got a response %s for %d" % (msg['response'], msg['id']))
+            self.calendar.refresh_callback(msg['result'], msg['pending'], msg['status'])
 
     def timedout(self):
-        self.calendar.refresh_callback(None, None, 'Sin respuesta del servidor')
+        if self.calendar is not None:
+            self.calendar.refresh_callback(None, None, 'Sin respuesta del servidor')
 
 
 class Modify(Request):
-    def __init__(self, calendar, operations):
+    def __init__(self, operations={}):
         super(Modify, self).__init__()
-        self.calendar = calendar
         self.operations = operations
 
     def call(self, queue):
         queue.send_modify(self)
 
     def callback(self, msg):
-        L.debug("Got a response %s for %d" % (msg['response'], msg['id']))
-        self.calendar.modify_callback()
+        if self.calendar is not None:
+            L.debug("Got a response %s for %d" % (msg['response'], msg['id']))
+            self.calendar.modify_callback()
 
     def callback_partial(self, msg):
-        L.debug("Got a partial response %s for %d" % (msg['response'], msg['id']))
-        self.calendar.modify_partial_callback(msg['status'])
+        if self.calendar is not None:
+            L.debug("Got a partial response %s for %d" % (msg['response'], msg['id']))
+            self.calendar.modify_partial_callback(msg['status'])
 
     def timedout(self):
         pass
@@ -150,10 +154,9 @@ class QueryThread:
         msg = pickle.loads(pickle_msg)
 
         if 'response' in msg:
-            if 'is_partial' in msg and msg['is_partial']:
-                keep = True
-            else:
-                keep = False
+            if msg['id'] == -1:
+                self.add_fake_request(msg)
+            keep = 'is_partial' in msg and msg['is_partial']
             req = self.get_id(msg['id'], keep)
             if req is not None:
                 if keep:
@@ -197,6 +200,19 @@ class QueryThread:
         request.endtime = now + datetime.timedelta(seconds=timeout)
         request.id = _id
         return _id
+
+    def add_fake_request(self,msg):
+        if msg['response'] == 'ping':
+            request=Ping()
+        elif msg['response'] == 'query':
+            request=Refresh()
+        elif msg['response'] == 'modify':
+            request=Modify()
+        else:
+            L.error("Respuesta desconocida %s" % msg['response'])
+
+        request.id=msg['id']
+        self.pending[request.id] = request
 
     def get_config(self):
         return App.get_running_app().config

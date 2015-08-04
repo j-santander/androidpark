@@ -56,14 +56,14 @@ class CalendarApp(App):
         self.query_thread.on_resume()
         return True
 
-    def do_refresh(self, calendar):
-        self.queue.put(Refresh(calendar))
+    def do_refresh(self):
+        self.queue.put(Refresh())
 
-    def do_ping(self, calendar):
-        self.queue.put(Ping(calendar))
+    def do_ping(self):
+        self.queue.put(Ping())
 
-    def do_modify(self, calendar, operations):
-        self.queue.put(Modify(calendar, operations))
+    def do_modify(self, operations):
+        self.queue.put(Modify(operations))
 
     def build_config(self, config):
         # config.setdefaults('credentials',
