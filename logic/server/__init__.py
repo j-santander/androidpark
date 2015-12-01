@@ -127,7 +127,11 @@ class ServerInterface:
         last_text = ""
         today = datetime.datetime.now(tz=self.met)
         for i in sorted(operations):
-            if (i.month - today.month) not in (0, 1):
+            if(i.month==1 and today.month==12):
+                mes = 1
+            else:
+                mes = i.month - today.month
+            if mes not in (0, 1):
                 L.error(str(i) + " is neither current nor next month")
                 partial(str(i) + " no es parte del mes actual o siguiente")
                 continue
@@ -149,7 +153,7 @@ class ServerInterface:
                 L.debug("Requesting " + str(i) + ": " + self.map_operation(operations[i]))
                 r = self.session.post("http://" + self.host + "/perfil.php", data={
                     "dia": i.day,
-                    "mes": i.month - today.month,
+                    "mes": mes,
                     "libre": operations[i],
                 })
 

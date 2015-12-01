@@ -321,7 +321,11 @@ class ServerThread:
 
         for i in sorted(self.pending):
             today = datetime.datetime.now(tz=self.met)
-            if (i.month - today.month) not in (0, 1):
+            if(i.month==1 and today.month==12):
+                mes = 1
+            else:
+                mes = i.month - today.month
+            if mes not in (0, 1):
                 L.error(str(i) + " is neither current nor next month")
                 to_delete.append(i)
                 continue
