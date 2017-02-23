@@ -1,4 +1,6 @@
 # androidpark
+** NOTA IMPORTANTE ** Esta NO es la aplicación oficial para el nuevo sistema de reserva del parking que entra en funcionamiento el 24 de Febrero de 2017. A partir de esa fecha, la aplicación en este respositorio dejará de funcionar.
+
 Aplicación para la solicitud de plazas de parking en el Edificio Bilma
 
 # Salvedades
